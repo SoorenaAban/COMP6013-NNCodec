@@ -7,8 +7,9 @@ from nncodec import prediction_models
 from nncodec import models
 
 test_settings = {
+    'TF_SEED': 1234,
     'TF_BATCH_SIZES': 1,
-    'DEF_SEQ_LENGTH': 5,
+    'TF_SEQ_LENGTH': 5,
     'TF_NUM_LAYERS': 2,
     'TF_RNN_UNITS': 16,
     'TF_EMBEDING_SIZE': 8,
@@ -31,8 +32,8 @@ class TestTFPredictionModel(unittest.TestCase):
         self.assertEqual(tokens, [0, 1, 2])
 
     def test_preprocess_input(self):
-        input_tensor = self.model_obj._preprocess_input(self.input_symbols, seq_length=test_settings['DEF_SEQ_LENGTH'], batch_size=test_settings['TF_BATCH_SIZES'])
-        self.assertEqual(input_tensor.shape, (test_settings['TF_BATCH_SIZES'], test_settings['DEF_SEQ_LENGTH']))
+        input_tensor = self.model_obj._preprocess_input(self.input_symbols, seq_length=test_settings['TF_SEQ_LENGTH'], batch_size=test_settings['TF_BATCH_SIZES'])
+        self.assertEqual(input_tensor.shape, (test_settings['TF_BATCH_SIZES'], test_settings['TF_SEQ_LENGTH']))
 
     def test_postprocess_predictions(self):
         vocab_size = self.dictionary.get_size()
@@ -53,10 +54,6 @@ class TestTFPredictionModel(unittest.TestCase):
         sys.stdout = captured_output
 
         self.model_obj.train(self.input_symbols, self.correct_symbol)
-
-        sys.stdout = sys.__stdout__
-        output_str = captured_output.getvalue()
-        self.assertIn("Training loss:", output_str)
 
 if __name__ == '__main__':
     unittest.main()

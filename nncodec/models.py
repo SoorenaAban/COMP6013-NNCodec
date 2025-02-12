@@ -5,44 +5,46 @@ import uuid
 class Symbol:
     """ Symbol class represents a single symbol in the data"""
     def __init__(self, data):
-        """data: the data of the symbol. It should be in the form of bytes"""
         if not isinstance(data, bytes):
             raise ValueError("Data should be in form of bytes")
         self.data = data
         self.id = uuid.uuid4()
 
     def __eq__(self, other):
-        return self.__hash__() == other.__hash__()
+        if isinstance(other, Symbol):
+            return self.data == other.data
+        return False
+    
+    def __repr__(self):
+        return str(self.data)
 
     def __hash__(self):
         return hash(self.id)
 
 class SymbolFrequency:
+    """ SymbolFrequency class represents a single symbol in the data with its frequency"""
     def __init__(self, symbol, frequency):
         self.symbol = symbol
         self.frequency = frequency
+        
+    def __str__(self):
+        return f"[{self.symbol},{self.frequency}]"
 
-class SymbolsFrequencies:
-    def __init__(self):
-        self.symbol_frequencies = []
+    def __repr__(self):
+        return f"[{self.symbol},{self.frequency}]"
 
 class Dictionary:
+    """Dictionary class represents the dictionary of symbols in the data"""
     def __init__(self):
         self.symbols = set()
 
     def add(self, symbol):
-        """adds a symbol to the dictionary
-        symbol: the symbol to be added
-        returns True if the symbol is already in the dictionary, False otherwise"""
         if symbol in self.symbols:
             return True
         self.symbols.add(symbol)
         return False
 
     def add_multiple(self, symbols):
-        """adds multiple symbols to the dictionary
-        symbols: the symbols to be added
-        returns the number of symbols added"""
         count = 0
         for symbol in symbols:
             if self.add(symbol):
@@ -66,6 +68,7 @@ class Dictionary:
         return False
 
 class CompressedModel:
+    """To be used to represent the compressed file"""
     def __init__(self):
         self.length = 0 # 6 byes
         self.vocab_code = None # 2 bytes

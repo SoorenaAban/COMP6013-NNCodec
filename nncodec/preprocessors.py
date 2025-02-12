@@ -4,14 +4,11 @@ import abc
 
 from .models import Dictionary, Symbol
 
-#abstract model/interface for preprocessors
 class base_preprocessor(abc.ABC):
-
-
     @property
     @abc.abstractmethod
     def code(self):
-        """return the code of the preprocessor"""
+        """The code of the preprocessor for identification"""
         pass
 
     @property
@@ -22,37 +19,41 @@ class base_preprocessor(abc.ABC):
 
     # @abc.abstractmethod
     # def get_terminals(self):
-    #     """returns the header terminator in form of bytes"""
+    #     """returns the header terminator in form of bytes, in case no set size for the header is present"""
     #     pass
 
     @abc.abstractmethod
     def convert_to_symbols(self, data):
-        """ Convert data to symbols and constructs dictionary
+        """ 
+        Convert data to symbols and constructs dictionary
 
         Args:
             data: a data object, should be in form of bytes.
 
         Returns:
-            symbols: a colection of symbols representing the data
-            dictionary: a dictionary of symbols
+            list[symbols]: a colection of symbols representing the data
+            Dictionary: a dictionary of symbols
 
         """
         pass
 
     @abc.abstractmethod
     def convert_from_symbols(self, data):
-        """ Convert symbols back to data
+        """ 
+        Convert symbols back to data
 
         Args:
-            symbols: a collection of symbols
+            data(list[Symbol]): a collection of symbols
 
         Returns:
-            _type_: the data object in bytes
+            list[byte]: decoded data in form of bytes
         """
         pass
 
     def construct_dictionary_from_symbols(self, symbols):
-        """ Construct a dictionary of symbols and their corresponding probabilities
+        """ 
+        Construct a dictionary of symbols and their corresponding probabilities from a set of symbols
+        maybe 
 
         Args:
             symbols: a collection of symbols
@@ -66,9 +67,15 @@ class base_preprocessor(abc.ABC):
 
     @abc.abstractmethod
     def encode_dictionary_for_header(self, dictionary):
-        """turn dictionary into a binary representation to be written to the header in form of bytes
-        dictionary: the dictionary to be encoded
-        returns the encoded dictionary in form of bytes"""
+        """
+        turn dictionary into a binary representation to be written to the header in form of bytes
+        
+        Args:
+            dictionary(Dictionary): the dictionary to be encoded
+        
+        Returns:
+            list[byte]: the binary representation of the dictionary
+        """
         pass
 
     @abc.abstractmethod
@@ -135,19 +142,12 @@ class byte_preprocessor(base_preprocessor):
 
         symbols = []
         for byte in data:
-
+            #make sure the symbol is in dictionary
+            
             symbols.append(Symbol(bytes([byte])))
         return symbols, dictionary
 
     def convert_from_symbols(self, symbols):
-        """ Convert symbols back to data
-
-        Args:
-            symbols: a collection of symbols
-
-        Returns:
-            _type_: the data object in bytes
-        """
         data = b''
         for symbol in symbols:
             data += symbol.data
@@ -158,6 +158,7 @@ class byte_preprocessor(base_preprocessor):
         dictionary = Dictionary()
         for i in range(256):
             dictionary.add(Symbol(i.to_bytes(1, 'big')))
+        return dictionary
 
     def encode_dictionary_for_header(self, dictionary):
         #for now, the dictionary will be an array of bytes
