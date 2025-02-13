@@ -78,6 +78,8 @@ class arithmetic_coder(coder_base):
         symbols_encoded = 0
 
         for symbol in symbols:
+            bits_before = len(output_bits)
+            
             probs = prediction_model.predict(context)
             cum_freq = self.probabilities_to_code(probs)
             total = cum_freq[-1]
@@ -117,7 +119,13 @@ class arithmetic_coder(coder_base):
             # Append the symbol to the context.
             context.append(symbol)
             symbols_encoded += 1
-            print(f"[INFO] Encoded symbol: '{symbol.data}'. Symbol probability: {symbol_probability}. Number of encoded symbols: {symbols_encoded}")
+            
+            bits_after = len(output_bits)
+            bits_for_this_symbol = bits_after - bits_before
+            print(f"[DEBUG] Encoded symbol: '{symbol.data}' "
+                  f"(prob={symbol_probability:.6f}), "
+                  f"bits used={bits_for_this_symbol}, "
+                  f"total bits so far={bits_after}")
 
         # Flush the remaining bits: output state_bits bits.
         for _ in range(self.state_bits):
@@ -182,7 +190,13 @@ class arithmetic_coder(coder_base):
 
             sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
             decoded_symbol = sorted_symbols[symbol_index]
-            print(f"[INFO] Decoded symbol: '{decoded_symbol.data}'. Symbol probability:{symbol_probability}. Number of decoded symbols: {len(decoded_symbols) + 1}")
+            
+            
+            
+            print(f"[DEBUG] Decoded symbol: '{decoded_symbol.data}', "
+                  f"(prob={symbol_probability:.6f}), "
+                  f"symbol_count={symbol_count+1}/{num_symbols}")
+            
             decoded_symbols.append(decoded_symbol)
 
             prediction_model.train(context, decoded_symbol)

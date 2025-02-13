@@ -18,18 +18,18 @@ Praesent sit amet scelerisque leo, nec congue ante. Fusce scelerisque, risus qui
 Pellentesque faucibus nisl ipsum, ut porta risus pharetra placerat. Praesent a metus ut orci accumsan pellentesque nec eu risus. Quisque vitae lectus finibus, ullamcorper enim nec, efficitur dui. Fusce tortor nisl, venenatis ut ultricies ut, scelerisque ut libero. Fusce vestibulum sapien sed elit tempus tempus interdum non nisi. In efficitur, augue eu ornare interdum, velit metus condimentum nunc, id pellentesque eros lacus ac lorem. In bibendum neque lorem, eu vestibulum sem blandit et. Maecenas tristique metus id ultrices suscipit. Fusce et mollis massa. Donec condimentum, felis ac lacinia ullamcorper, odio augue dignissim libero, et venenatis nibh mi id enim. Duis ultrices tincidunt quam, et iaculis velit tempor posuere. Quisque facilisis ante ut arcu vulputate, eu posuere enim volutpat. Curabitur id ligula id dui laoreet dignissim eget vel tortor. Donec tortor odio, condimentum et leo vel, venenatis congue neque. """
 
 def main():
-    print(lorem_ipsum_1par)
+    print(lorem_ipsum_5par)
     
-    lorem_ipsum_1par_bytes = str.encode(lorem_ipsum_1par)
-    print(f"Sized of original data: {len(lorem_ipsum_1par_bytes)}")
+    lorem_ipsum_bytes = str.encode(lorem_ipsum_5par)
+    print(f"Sized of original data: {len(lorem_ipsum_bytes)}")
     
     byte_codec = codec.byte_codec()
     
     encoding_time_start = time.time()
-    encoded_data = byte_codec.compress(lorem_ipsum_1par_bytes)
+    encoded_data = byte_codec.compress(lorem_ipsum_bytes)
     encoding_time_end = time.time()
     print(f"Sized of encoded data: {len(encoded_data)}")
-    print(f"Compression ratio: {len(encoded_data)/len(lorem_ipsum_1par_bytes)}")
+    print(f"Compression ratio: {len(encoded_data)/len(lorem_ipsum_bytes)}")
     print(f"Encoding time: {encoding_time_end - encoding_time_start} seconds")
     
     decoding_time_start = time.time()
