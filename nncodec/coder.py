@@ -91,6 +91,8 @@ class arithmetic_coder(coder_base):
                     break
             if symbol_index is None:
                 raise ValueError("Symbol not found in dictionary")
+            
+            symbol_probability = probs[symbol_index]
 
             # Retrieve the frequency range for this symbol.
             sym_low = cum_freq[symbol_index - 1] if symbol_index > 0 else 0
@@ -115,7 +117,7 @@ class arithmetic_coder(coder_base):
             # Append the symbol to the context.
             context.append(symbol)
             symbols_encoded += 1
-            print(f"[INFO] Encoded symbol: '{symbol.data}'. Number of encoded symbols: {symbols_encoded}")
+            print(f"[INFO] Encoded symbol: '{symbol.data}'. Symbol probability: {symbol_probability}. Number of encoded symbols: {symbols_encoded}")
 
         # Flush the remaining bits: output state_bits bits.
         for _ in range(self.state_bits):
@@ -175,10 +177,12 @@ class arithmetic_coder(coder_base):
                     break
             if symbol_index is None:
                 raise ValueError("Failed to decode symbol: no matching frequency range found.")
+            
+            symbol_probability = probs[symbol_index]
 
             sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
             decoded_symbol = sorted_symbols[symbol_index]
-            print(f"[INFO] Decoded symbol: '{decoded_symbol.data}'. Number of decoded symbols: {len(decoded_symbols) + 1}")
+            print(f"[INFO] Decoded symbol: '{decoded_symbol.data}'. Symbol probability:{symbol_probability}. Number of decoded symbols: {len(decoded_symbols) + 1}")
             decoded_symbols.append(decoded_symbol)
 
             prediction_model.train(context, decoded_symbol)
