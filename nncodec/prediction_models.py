@@ -107,7 +107,7 @@ class testing_prediction_model(base_prediction_model):
 
 class tf_prediction_model(base_prediction_model):
     
-    def reset_seed(self, seed):
+    def enable_determinism(self, seed):
         """
         Initializes various random seeds to help with determinism.
         
@@ -125,6 +125,9 @@ class tf_prediction_model(base_prediction_model):
         random.seed(seed)
         np.random.seed(seed)
         tf.random.set_seed(seed)
+        
+        tf.keras.utils.set_random_seed(seed)
+        tf.config.experimental.enable_op_determinism()
     
     def __init__(self, dictionary, settings_override=None):
         if((dictionary is None) or (not isinstance(dictionary, Dictionary))):
@@ -155,7 +158,7 @@ class tf_prediction_model(base_prediction_model):
         else:
             self._settings = settings_override
 
-        self.reset_seed(self._settings['TF_SEED'])
+        self.enable_determinism(self._settings['TF_SEED'])
         self.batch_size = self._settings['TF_BATCH_SIZES']
         self.seq_length = self._settings['TF_SEQ_LENGTH']
         self.num_layers = self._settings['TF_NUM_LAYERS']
