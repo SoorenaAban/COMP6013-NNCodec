@@ -123,7 +123,7 @@ class arithmetic_coder(coder_base):
             bits_after = len(output_bits)
             bits_for_this_symbol = bits_after - bits_before
             print(f"[DEBUG] Encoded symbol: '{symbol.data}' "
-                  f"(prob={symbol_probability:.6f}), "
+                  f"(prob={str(symbol_probability.frequency.item())}), "
                   f"bits used={bits_for_this_symbol}, "
                   f"total bits so far={bits_after}")
 
