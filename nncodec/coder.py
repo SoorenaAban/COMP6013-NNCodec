@@ -122,10 +122,10 @@ class arithmetic_coder(coder_base):
             
             bits_after = len(output_bits)
             bits_for_this_symbol = bits_after - bits_before
-            print(f"[DEBUG] Encoded symbol: '{symbol.data}' "
-                  f"(prob={str(symbol_probability.frequency.item())}), "
-                  f"bits used={bits_for_this_symbol}, "
-                  f"total bits so far={bits_after}")
+            # print(f"[DEBUG] Encoded symbol: '{symbol.data}' "
+            #       f"(prob={str(symbol_probability.frequency.item())}), "
+            #       f"bits used={bits_for_this_symbol}, "
+            #       f"total bits so far={bits_after}")
 
         # Flush the remaining bits: output state_bits bits.
         for _ in range(self.state_bits):
@@ -193,9 +193,9 @@ class arithmetic_coder(coder_base):
             
             
             
-            print(f"[DEBUG] Decoded symbol: '{decoded_symbol.data}', "
-                  f"(prob={symbol_probability:.6f}), "
-                  f"symbol_count={symbol_count+1}/{num_symbols}")
+            # print(f"[DEBUG] Decoded symbol: '{decoded_symbol.data}', "
+            #       f"(prob={symbol_probability:.6f}), "
+            #       f"symbol_count={symbol_count+1}/{num_symbols}")
             
             decoded_symbols.append(decoded_symbol)
 
