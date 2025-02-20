@@ -106,6 +106,9 @@ class testing_prediction_model(base_prediction_model):
         pass
 
 class tf_prediction_model(base_prediction_model):
+    class LastTimeStep(tf.keras.layers.Layer):
+        def call(self, inputs):
+            return inputs[:, -1, :]
     
     def enable_determinism(self, seed):
         """
@@ -171,7 +174,10 @@ class tf_prediction_model(base_prediction_model):
         policy = tf.keras.mixed_precision.Policy('mixed_float16')
         tf.keras.mixed_precision.set_global_policy(policy)
         
-                
+        self._sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
+        self._token_map = {symbol.data: idx for idx, symbol in enumerate(self._sorted_symbols)}
+        
+        
         self.dummy_states = []
         for _ in range(self.num_layers):
             dummy_state = tf.zeros((self.batch_size, self.rnn_units), dtype=tf.float16)
@@ -192,6 +198,8 @@ class tf_prediction_model(base_prediction_model):
 
         predictions, state_h, state_c = tf.keras.layers.LSTM(
             self.rnn_units,
+            activation='tanh',
+            recurrent_activation='sigmoid',
             return_sequences=True,
             return_state=True,
             recurrent_initializer='glorot_uniform',
@@ -207,6 +215,8 @@ class tf_prediction_model(base_prediction_model):
             )
             predictions, state_h, state_c = tf.keras.layers.LSTM(
                 self.rnn_units,
+                activation='tanh',
+                recurrent_activation='sigmoid',
                 return_sequences=True,
                 return_state=True,
                 recurrent_initializer='glorot_uniform',
@@ -217,10 +227,7 @@ class tf_prediction_model(base_prediction_model):
 
         final_outputs = []
         for i in range(self.num_layers):
-            final_out = tf.keras.layers.Lambda(
-                lambda x: x[:, -1, :],
-                name=f"final_output_{i}"
-            )(skip_connections[i])
+            final_out = tf_prediction_model.LastTimeStep(name=f"final_output_{i}")(skip_connections[i])
             final_outputs.append(final_out)
 
         if self.num_layers == 1:
@@ -238,6 +245,10 @@ class tf_prediction_model(base_prediction_model):
             optimizer=tf.keras.optimizers.Adam(learning_rate=self.start_learning_rate),
             loss='sparse_categorical_crossentropy'
         )
+        
+    @tf.function(jit_compile=True)
+    def _predict_raw(self, full_inputs):
+        return self.model(full_inputs, training=False)
 
     def _symbols_to_tokens(self, symbols, dictionary):
         """
@@ -259,11 +270,9 @@ class tf_prediction_model(base_prediction_model):
             raise ValueError("All elements in symbols must be instances of Symbol")
         if not hasattr(dictionary, 'symbols'):
             raise ValueError("dictionary must have a 'symbols' attribute")
-        sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
-        token_map = {symbol.data: idx for idx, symbol in enumerate(sorted_symbols)}
         tokens = []
         for symbol in symbols:
-            token = token_map.get(symbol.data)
+            token = self._token_map.get(symbol.data)
             if token is None:
                 raise ValueError(f"Symbol with data {symbol.data} not found in dictionary.")
             tokens.append(token)
@@ -286,8 +295,6 @@ class tf_prediction_model(base_prediction_model):
         Raises:
             ValueError: If input is invalid.
         """
-        import numpy as np
-        from keras import utils
 
         if symbols is None or not isinstance(symbols, list):
             raise ValueError("symbols must be a list of Symbol objects")
@@ -300,6 +307,7 @@ class tf_prediction_model(base_prediction_model):
         padded_sequences = utils.pad_sequences(
             sequences, maxlen=seq_length, padding='post', truncating='post', value=padding_value
         )
+        padded_sequences = tf.convert_to_tensor(padded_sequences, dtype=tf.int32)
         if padded_sequences.shape[0] != batch_size:
             padded_sequences = np.tile(padded_sequences, (batch_size, 1))
         return tf.convert_to_tensor(padded_sequences, dtype=tf.int32)
@@ -324,13 +332,12 @@ class tf_prediction_model(base_prediction_model):
             raw_output = raw_output.numpy()
         if not isinstance(raw_output, np.ndarray):
             raise ValueError("raw_output must be a tf.Tensor or np.ndarray")
-        sorted_symbols = sorted(self.dictionary.symbols, key=lambda s: s.data)
         batch_result = []
         for row in raw_output:
             symbol_freq_list = []
             for idx, prob in enumerate(row):
                 try:
-                    symbol = sorted_symbols[idx]
+                    symbol = self._sorted_symbols[idx]
                 except IndexError:
                     raise ValueError("Index out of range while mapping predictions to symbols.")
                 symbol_freq_list.append(SymbolFrequency(symbol, prob))
@@ -349,7 +356,7 @@ class tf_prediction_model(base_prediction_model):
 
         full_inputs = [main_input_tensor] + self.dummy_states
 
-        raw_output = self.model(full_inputs, training=False)
+        raw_output = self.model(full_inputs)
         predictions = self._postprocess_predictions(raw_output)
         return predictions[0]
 
