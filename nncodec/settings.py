@@ -2,6 +2,15 @@
 
 import os
 
+#Logging settings
+SAVE_INFO = True
+SAVE_WARNING = True
+SAVE_ERROR = True
+LOG_FILE = os.path.join(os.getcwd(), "log.txt")
+PRINT_INFO = True
+PRINT_WARNING = True
+PRINT_ERROR = True
+
 #Coder settings (TODO: actully implement them)
 ARITH_SCALING_FACTOR = 1000000
 ARITH_OFFSET = 1
