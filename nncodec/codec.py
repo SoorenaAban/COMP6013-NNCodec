@@ -4,7 +4,7 @@ import abc
 
 from .prediction_models import tf_prediction_model
 from .preprocessors import byte_preprocessor
-from .coder import arithmetic_coder
+from .coder import arithmetic_coder, arithmetic_coder_deep
 
 class base_codec(abc.ABC):
     """The base class for the codecs."""
@@ -45,5 +45,20 @@ class byte_codec(base_codec):
         dictionary = prpr.construct_dictionary_from_header("")
         predictor = tf_prediction_model(dictionary)
         codr = arithmetic_coder()
+        syms = codr.decode(data, dictionary, predictor)
+        return prpr.convert_from_symbols(syms)
+    
+class byte_codec_deep(base_codec):
+    def compress(self, data):
+        prpr = byte_preprocessor()
+        syms, dictionary = prpr.convert_to_symbols(data)
+        predictor = tf_prediction_model(dictionary)
+        codr = arithmetic_coder_deep()
+        return codr.encode(syms, predictor)
+    def decompress(self, data):
+        prpr = byte_preprocessor()
+        dictionary = prpr.construct_dictionary_from_header("")
+        predictor = tf_prediction_model(dictionary)
+        codr = arithmetic_coder_deep()
         syms = codr.decode(data, dictionary, predictor)
         return prpr.convert_from_symbols(syms)

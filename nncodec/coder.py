@@ -2,6 +2,9 @@
 
 import abc
 import numpy as np
+import os
+import tempfile
+import struct
 
 from .models import Symbol
 
@@ -67,7 +70,6 @@ class arithmetic_coder(coder_base):
         if symbols is None or not isinstance(symbols, list) or len(symbols) == 0:
             raise ValueError("symbols must be a non-empty list of Symbol objects")
         
-        # Add header: store number of symbols (4 bytes, big-endian)
         num_symbols = len(symbols)
         header = num_symbols.to_bytes(4, byteorder='big')
 
@@ -84,7 +86,6 @@ class arithmetic_coder(coder_base):
             cum_freq = self.probabilities_to_code(probs)
             total = cum_freq[-1]
 
-            # Determine the symbol's index using the sorted dictionary.
             sorted_symbols = sorted(prediction_model.dictionary.symbols, key=lambda s: s.data)
             symbol_index = None
             for idx, s in enumerate(sorted_symbols):
@@ -96,7 +97,6 @@ class arithmetic_coder(coder_base):
             
             symbol_probability = probs[symbol_index]
 
-            # Retrieve the frequency range for this symbol.
             sym_low = cum_freq[symbol_index - 1] if symbol_index > 0 else 0
             sym_high = cum_freq[symbol_index]
 
@@ -105,35 +105,25 @@ class arithmetic_coder(coder_base):
             new_high = low + (sym_high * current_range) // total - 1
             low, high = new_low, new_high
 
-            # Output bits while the most significant bits of low and high agree.
             while (low >> (self.state_bits - 1)) == (high >> (self.state_bits - 1)):
                 bit = low >> (self.state_bits - 1)
                 output_bits.append(bit)
                 low = (low << 1) & ((1 << self.state_bits) - 1)
                 high = ((high << 1) & ((1 << self.state_bits) - 1)) | 1
             
-            # **Deterministic Training Update:**  
-            # Train the prediction model with the current context and the actual symbol.
             prediction_model.train(context, symbol)
 
-            # Append the symbol to the context.
             context.append(symbol)
             symbols_encoded += 1
             
             bits_after = len(output_bits)
             bits_for_this_symbol = bits_after - bits_before
-            # print(f"[DEBUG] Encoded symbol: '{symbol.data}' "
-            #       f"(prob={str(symbol_probability.frequency.item())}), "
-            #       f"bits used={bits_for_this_symbol}, "
-            #       f"total bits so far={bits_after}")
-
-        # Flush the remaining bits: output state_bits bits.
+            
         for _ in range(self.state_bits):
             bit = low >> (self.state_bits - 1)
             output_bits.append(bit)
             low = (low << 1) & ((1 << self.state_bits) - 1)
 
-        # Pack bits into bytes.
         byte_array = []
         for i in range(0, len(output_bits), 8):
             byte = 0
@@ -221,33 +211,30 @@ class arithmetic_coder(coder_base):
 
         return decoded_symbols
 
-    def probabilities_to_code(self, probabilities):
+    def probabilities_to_code(self, probs):
         """
         Convert a probability distribution into a cumulative frequency table.
         
         Args:
-            probabilities (list or np.ndarray): Either a list/array of floats (probabilities)
-                or a list of SymbolFrequency objects.
+            probs (list or np.ndarray): Either a list/array of numbers (floats) or a list of SymbolFrequency objects.
         
         Returns:
             np.ndarray: A 1D numpy array of cumulative frequencies.
         
         Raises:
-            ValueError: If the input is not of an expected type or if the probabilities do not sum to 1.
+            ValueError: If the input probabilities do not sum to 1.
         """
-        if isinstance(probabilities, list) and len(probabilities) > 0 and hasattr(probabilities[0], 'frequency'):
-            probs_array = np.array([sf.frequency for sf in probabilities], dtype=np.float64)
+        if isinstance(probs, list) and len(probs) > 0 and hasattr(probs[0], 'frequency'):
+            probs_array = np.array([float(sf.frequency) for sf in probs], dtype=np.float64)
         else:
-            probs_array = np.array(probabilities, dtype=np.float64)
+            probs_array = np.array(probs, dtype=np.float64)
         
         if not np.isclose(np.sum(probs_array), 1.0, atol=1e-5):
             raise ValueError("The input probabilities must sum to 1")
         
         freqs = np.round(probs_array * self.scaling_factor + self.offset).astype(np.int64)
-        
-        cum_freq = np.cumsum(freqs)
-        
-        return cum_freq
+        return np.cumsum(freqs)
+
 
     def code_to_probabilities(self, cum_freq):
         """
@@ -283,3 +270,309 @@ class arithmetic_coder(coder_base):
     #         dict: Contains 'low', 'high', and 'state_bits'.
     #     """
     #     return {"low": self.low, "high": self.high, "state_bits": self.state_bits}
+
+class arithmetic_coder_deep:
+    def __init__(self, settings_override=None):
+        """
+        Initializes arithmetic_coder_deep with optional settings.
+        
+        Args:
+            settings_override (dict): May contain:
+                - 'ARITH_SCALING_FACTOR'
+                - 'ARITH_OFFSET'
+        """
+        if settings_override is None:
+            settings_override = {}
+        if not isinstance(settings_override, dict):
+            raise ValueError("settings_override must be a dictionary.")
+        self.scaling_factor = settings_override.get("ARITH_SCALING_FACTOR", 10000000)
+        self.offset = settings_override.get("ARITH_OFFSET", 1)
+
+    def probabilities_to_code(self, probs):
+        """
+        Convert a probability distribution into a cumulative frequency table.
+        
+        Args:
+            probs (list or np.ndarray): Either a list/array of numbers (floats) or a list of SymbolFrequency objects.
+        
+        Returns:
+            np.ndarray: A 1D numpy array of cumulative frequencies.
+        
+        Raises:
+            ValueError: If the probabilities do not sum to 1.
+        """
+        if isinstance(probs, list) and len(probs) > 0 and hasattr(probs[0], 'frequency'):
+            probs_array = np.array([float(sf.frequency) for sf in probs], dtype=np.float64)
+        else:
+            probs_array = np.array(probs, dtype=np.float64)
+        
+        if not np.isclose(np.sum(probs_array), 1.0, atol=1e-5):
+            raise ValueError("The input probabilities must sum to 1")
+        
+        freqs = np.round(probs_array * self.scaling_factor + self.offset).astype(np.int64)
+        return np.cumsum(freqs)
+
+    def code_to_probabilities(self, cum_freq):
+        """
+        Converts a cumulative frequency array into probabilities.
+        
+        Args:
+            cum_freq (np.ndarray): 1-D array of cumulative frequencies.
+            
+        Returns:
+            np.ndarray: Array of probabilities.
+        """
+        cum_freq = np.array(cum_freq)
+        if cum_freq.ndim != 1:
+            raise ValueError("cumulative frequency table must be one-dimensional")
+        freqs = np.empty_like(cum_freq)
+        freqs[0] = cum_freq[0]
+        freqs[1:] = np.diff(cum_freq)
+        total = cum_freq[-1]
+        if total == 0:
+            raise ValueError("Total frequency cannot be zero")
+        probabilities = freqs / total
+        return probabilities
+
+    def encode(self, input_symbols, prediction_model):
+        # Input validation.
+        if not isinstance(input_symbols, list):
+            raise ValueError("input_symbols must be a list.")
+        if prediction_model is None:
+            raise ValueError("prediction_model cannot be None.")
+        if not hasattr(prediction_model, "train") or not hasattr(prediction_model, "save_model"):
+            raise ValueError("prediction_model must have train and save_model methods.")
+        if not hasattr(prediction_model, "dictionary"):
+            raise ValueError("prediction_model must have a dictionary attribute.")
+
+        for i, symbol in enumerate(input_symbols):
+            context = input_symbols[:i]  
+            prediction_model.train(context, symbol)
+        
+        temp_dir = tempfile.gettempdir()
+        temp_filename = next(tempfile._get_candidate_names()) + ".weights.h5"
+        temp_filepath = os.path.join(temp_dir, temp_filename)
+        prediction_model.save_model(temp_filepath)
+        if not os.path.exists(temp_filepath):
+            raise IOError("Model weights file was not created.")
+        with open(temp_filepath, "rb") as f:
+            weights_data = f.read()
+        os.remove(temp_filepath)
+        
+        weights_header = struct.pack(">Q", len(weights_data))
+        
+        message_length = len(input_symbols)
+        arithmetic_bitstream = self.arithmetic_encode_symbols(input_symbols, prediction_model, prediction_model.dictionary)
+       
+        msg_length_header = struct.pack(">I", message_length)
+        arithmetic_bitstream = msg_length_header + arithmetic_bitstream
+        
+        return weights_header + weights_data + arithmetic_bitstream
+
+    def arithmetic_encode_symbols(self, input_symbols, prediction_model, dictionary):
+        """
+        Performs arithmetic encoding on the symbol sequence.
+        
+        For each symbol (using its context), obtain the fixed probability distribution from
+        prediction_model.predict(context), check for near-zero probabilities, convert to a cumulative frequency
+        table, and update the [low, high] interval. Renormalization is applied to extract bits.
+        
+        Args:
+            input_symbols (list): List of symbol objects.
+            prediction_model: A prediction model instance.
+            dictionary: A dictionary instance with symbol ordering.
+        
+        Returns:
+            bytes: The arithmetic-coded bitstream (excluding the 4-byte message length header).
+        """
+        if not isinstance(input_symbols, list):
+            raise ValueError("input_symbols must be a list.")
+        if prediction_model is None or dictionary is None:
+            raise ValueError("prediction_model and dictionary cannot be None.")
+
+        low = 0.0
+        high = 1.0
+        underflow_count = 0
+        output_bits = []  
+        
+        def output_bit(bit):
+            output_bits.append(bit)
+        
+        epsilon = 1e-10
+        
+        for i, symbol in enumerate(input_symbols):
+            context = input_symbols[:i]
+            probs_sf = prediction_model.predict(context)
+            if not isinstance(probs_sf, list):
+                raise ValueError("Prediction output must be a list of SymbolFrequency objects.")
+            try:
+                float_probs = [float(sf.frequency) for sf in probs_sf]
+            except Exception as e:
+                raise ValueError("Failed to extract probability values from prediction output: " + str(e))
+            if any(p < epsilon for p in float_probs):
+                raise ValueError("Symbol probability is zero or too close to zero.")
+            freqs = np.round(np.array(float_probs) * self.scaling_factor + self.offset).astype(np.int64)
+            cumulative = np.cumsum(freqs)
+            total = cumulative[-1]
+            
+            try:
+                symbol_index = dictionary.get_index(symbol)
+            except AttributeError:
+                sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
+                mapping = {s.data: idx for idx, s in enumerate(sorted_symbols)}
+                if symbol.data not in mapping:
+                    raise ValueError("Symbol not found in dictionary.")
+                symbol_index = mapping[symbol.data]
+            
+            lower_freq = 0 if symbol_index == 0 else cumulative[symbol_index - 1]
+            upper_freq = cumulative[symbol_index]
+            
+            range_width = high - low
+            new_low = low + range_width * (lower_freq / total)
+            new_high = low + range_width * (upper_freq / total)
+            low, high = new_low, new_high
+            
+            while True:
+                if high < 0.5:
+                    output_bit(0)
+                    for _ in range(underflow_count):
+                        output_bit(1)
+                    underflow_count = 0
+                    low *= 2
+                    high *= 2
+                elif low >= 0.5:
+                    output_bit(1)
+                    for _ in range(underflow_count):
+                        output_bit(0)
+                    underflow_count = 0
+                    low = (low - 0.5) * 2
+                    high = (high - 0.5) * 2
+                elif low >= 0.25 and high < 0.75:
+                    underflow_count += 1
+                    low = (low - 0.25) * 2
+                    high = (high - 0.25) * 2
+                else:
+                    break
+        
+        underflow_count += 1
+        if low < 0.25:
+            output_bit(0)
+            for _ in range(underflow_count):
+                output_bit(1)
+        else:
+            output_bit(1)
+            for _ in range(underflow_count):
+                output_bit(0)
+        
+        bit_string = ''.join(str(b) for b in output_bits)
+        pad_len = (8 - len(bit_string) % 8) % 8
+        bit_string += '0' * pad_len
+        output_bytes = bytearray()
+        for i in range(0, len(bit_string), 8):
+            byte = int(bit_string[i:i+8], 2)
+            output_bytes.append(byte)
+        return bytes(output_bytes)
+
+    def decode(self, encoded_data, dictionary, prediction_model):
+        if not isinstance(encoded_data, bytes):
+            raise ValueError("encoded_data must be a bytes object.")
+        if len(encoded_data) < 8:
+            raise ValueError("Encoded data is too short.")
+        if dictionary is None or prediction_model is None:
+            raise ValueError("dictionary and prediction_model cannot be None.")
+        
+        weights_header = encoded_data[:8]
+        weights_length = struct.unpack(">Q", weights_header)[0]
+        if len(encoded_data) < 8 + weights_length:
+            raise ValueError("Encoded data is missing weights.")
+        weights_data = encoded_data[8:8+weights_length]
+        arithmetic_data = encoded_data[8+weights_length:]
+        
+        temp_dir = tempfile.gettempdir()
+        temp_filename = next(tempfile._get_candidate_names()) + ".weights.h5"
+        temp_filepath = os.path.join(temp_dir, temp_filename)
+        with open(temp_filepath, "wb") as f:
+            f.write(weights_data)
+        prediction_model.load_model(temp_filepath)
+        os.remove(temp_filepath)
+        
+        if len(arithmetic_data) < 4:
+            raise ValueError("Arithmetic data missing message length header.")
+        msg_length_header = arithmetic_data[:4]
+        message_length = struct.unpack(">I", msg_length_header)[0]
+        bitstream_bytes = arithmetic_data[4:]
+        
+        bit_string = ''.join(format(b, '08b') for b in bitstream_bytes)
+        bit_index = 0
+        def read_bit():
+            nonlocal bit_index
+            if bit_index >= len(bit_string):
+                return 0
+            b = int(bit_string[bit_index])
+            bit_index += 1
+            return b
+        
+        low = 0.0
+        high = 1.0
+        num_init_bits = 32
+        code_value = 0.0
+        for _ in range(num_init_bits):
+            code_value = code_value * 2 + read_bit()
+        code_value /= 2**num_init_bits
+        
+        decoded_symbols = []
+        epsilon = 1e-10
+        
+        for _ in range(message_length):
+            context = decoded_symbols[:]  # current decoded context
+            probs_sf = prediction_model.predict(context)
+            if not isinstance(probs_sf, list):
+                raise ValueError("Prediction output must be a list of SymbolFrequency objects.")
+            try:
+                float_probs = [float(sf.frequency) for sf in probs_sf]
+            except Exception as e:
+                raise ValueError("Failed to extract probability values during decoding: " + str(e))
+            if any(p < epsilon for p in float_probs):
+                raise ValueError("Symbol probability is zero or too close to zero during decoding.")
+            freqs = np.round(np.array(float_probs) * self.scaling_factor + self.offset).astype(np.int64)
+            cumulative = np.cumsum(freqs)
+            total = cumulative[-1]
+            
+            range_width = high - low
+            scaled_value = (code_value - low) / range_width
+            target = scaled_value * total
+            symbol_index = 0
+            while symbol_index < len(cumulative) and cumulative[symbol_index] <= target:
+                symbol_index += 1
+            try:
+                symbol = dictionary.get_symbol_by_index(symbol_index)
+            except AttributeError:
+                sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
+                if symbol_index >= len(sorted_symbols):
+                    raise ValueError("Decoded symbol index out of range.")
+                symbol = sorted_symbols[symbol_index]
+            decoded_symbols.append(symbol)
+            
+            lower_freq = 0 if symbol_index == 0 else cumulative[symbol_index - 1]
+            upper_freq = cumulative[symbol_index]
+            new_low = low + range_width * (lower_freq / total)
+            new_high = low + range_width * (upper_freq / total)
+            low, high = new_low, new_high
+            
+            # Renormalization.
+            while True:
+                if high < 0.5:
+                    low *= 2
+                    high *= 2
+                    code_value = code_value * 2 + read_bit() / (2**num_init_bits)
+                elif low >= 0.5:
+                    low = (low - 0.5) * 2
+                    high = (high - 0.5) * 2
+                    code_value = (code_value - 0.5) * 2 + read_bit() / (2**num_init_bits)
+                elif low >= 0.25 and high < 0.75:
+                    low = (low - 0.25) * 2
+                    high = (high - 0.25) * 2
+                    code_value = (code_value - 0.25) * 2 + read_bit() / (2**num_init_bits)
+                else:
+                    break
+        return decoded_symbols

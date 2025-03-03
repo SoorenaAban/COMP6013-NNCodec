@@ -1,4 +1,4 @@
-#prediction-model.py
+# prediction-model.py
 
 import os
 import abc
@@ -18,8 +18,7 @@ class base_prediction_model(abc.ABC):
         
         Args:
             dictionary (Dictionary): A Dictionary instance containing Symbol objects.
-            settings_override (dict, optional): A dictionary with settings values to override the defaults.)
-            (intended for testing)
+            settings_override (dict, optional): A dictionary with settings values to override the defaults.
                 Expected keys: 
                     - 'TF_BATCH_SIZES'
                     - 'TF_SEQ_LENGTH'
@@ -34,45 +33,45 @@ class base_prediction_model(abc.ABC):
     @abc.abstractmethod
     def predict(self, symbols, dictionary):
         """
-        returns the predicted data
+        Returns the predicted data.
         
         Args:
-            symbols(list[Symbol]): list of symbols to be used for prediction
-            dictionary(Dictionary): the dictionary to be used for prediction
-
+            symbols (list[Symbol]): list of symbols to be used for prediction.
+            dictionary (Dictionary): the dictionary to be used for prediction.
+        
         Returns:
-            np.ndarray: returns the predicted data
+            list[SymbolFrequency]: A list of SymbolFrequency objects corresponding to each symbol.
         """
         pass
 
     @abc.abstractmethod
     def train(self, in_symbols, correct_symbol):
         """
-        trains the model
+        Trains the model.
         
         Args:
-            in_symbols(list[Symbol]): list of symbols to be used for training as input for prediction
-            correct_symbol(Symbol): the correct symbol that should be predicted
+            in_symbols (list[Symbol]): list of symbols to be used for training as input for prediction.
+            correct_symbol (Symbol): the correct symbol that should be predicted.
         """
         pass
 
     @abc.abstractmethod
     def save_model(self, path):
         """
-        saves the model to the given path
+        Saves the model to the given path.
         
         Args:
-            path(string): the path where the model should be saved
+            path (str): the path where the model should be saved.
         """
         pass
 
     @abc.abstractmethod
     def load_model(self, path):
         """
-        loads the model from the given path
+        Loads the model from the given path.
         
         Args:
-            path(string): the path from where the model should be loaded
+            path (str): the path from where the model should be loaded.
         """
         pass
 
@@ -82,6 +81,10 @@ class testing_prediction_model(base_prediction_model):
         self.dictionary = dictionary
     
     def predict(self, context, dictionary=None):
+        """
+        Compute a fixed probability distribution based on context length and return a list
+        of SymbolFrequency objects for each symbol in the dictionary.
+        """
         context_length = len(context)
         vocab_size = self.dictionary.get_size()
         delta = (context_length % 3) * 0.05
@@ -94,15 +97,22 @@ class testing_prediction_model(base_prediction_model):
             probs = base / np.sum(base)
         
         probs = probs / np.sum(probs)
-        return probs
+        sorted_symbols = sorted(self.dictionary.symbols, key=lambda s: s.data)
+        if len(sorted_symbols) != len(probs):
+            raise ValueError("Mismatch between number of symbols and probabilities.")
+        result = [SymbolFrequency(sorted_symbols[i], float(probs[i])) for i in range(len(probs))]
+        return result
 
     def train(self, in_symbols, correct_symbol):
+        # For testing purposes, no training is performed.
         pass
 
     def save_model(self, path):
+        # For testing purposes, leave as a placeholder.
         pass
 
     def load_model(self, path):
+        # For testing purposes, leave as a placeholder.
         pass
 
 class tf_prediction_model(base_prediction_model):
@@ -124,7 +134,7 @@ class tf_prediction_model(base_prediction_model):
         if(seed is None):
             raise ValueError("seed cannot be None")
         
-        os.environ['PYTHONHASHSEED']=str(seed)
+        os.environ['PYTHONHASHSEED'] = str(seed)
         random.seed(seed)
         np.random.seed(seed)
         tf.random.set_seed(seed)
@@ -132,7 +142,7 @@ class tf_prediction_model(base_prediction_model):
         tf.keras.utils.set_random_seed(seed)
         tf.config.experimental.enable_op_determinism()
     
-    def __init__(self, dictionary, settings_override=None):
+    def __init__(self, dictionary, settings_override=None, model_weights_path=None):
         if((dictionary is None) or (not isinstance(dictionary, Dictionary))):
             raise ValueError("dictionary must be a Dictionary instance and cannot be None")
         if(settings_override is not None and not isinstance(settings_override, dict)):
@@ -177,13 +187,11 @@ class tf_prediction_model(base_prediction_model):
         self._sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
         self._token_map = {symbol.data: idx for idx, symbol in enumerate(self._sorted_symbols)}
         
-        
         self.dummy_states = []
         for _ in range(self.num_layers):
             dummy_state = tf.zeros((self.batch_size, self.rnn_units), dtype=tf.float16)
             self.dummy_states.extend([dummy_state, dummy_state])
         
-
         inputs = [tf.keras.Input(batch_shape=[self.batch_size, self.seq_length], name="main_input")]
         for i in range(self.num_layers):
             state_h = tf.keras.Input(shape=(self.rnn_units,), dtype=tf.float16, name=f'state_h_{i}')
@@ -204,7 +212,7 @@ class tf_prediction_model(base_prediction_model):
             return_state=True,
             recurrent_initializer='glorot_uniform',
             name="lstm_0"
-        )(embedded,initial_state=[inputs[1], inputs[2]])
+        )(embedded, initial_state=[inputs[1], inputs[2]])
         skip_connections = [predictions]
         outputs = [state_h, state_c]  
 
@@ -245,6 +253,10 @@ class tf_prediction_model(base_prediction_model):
             optimizer=tf.keras.optimizers.Adam(learning_rate=self.start_learning_rate),
             loss='sparse_categorical_crossentropy'
         )
+        
+        # If a weights file path is provided, load the weights.
+        if model_weights_path is not None:
+            self.load_model(model_weights_path)
         
     @tf.function(jit_compile=True)
     def _predict_raw(self, full_inputs):
@@ -388,10 +400,35 @@ class tf_prediction_model(base_prediction_model):
         loss = self._train_step(full_inputs, target_tensor)
         tf.print("Training loss:", loss)
 
-
     def save_model(self, path):
-        pass
+        if not isinstance(path, str) or len(path.strip()) == 0:
+            raise ValueError("The provided path must be a non-empty string.")
+        
+        if not path.endswith(".weights.h5"):
+            path = path + ".weights.h5"
+        
+        directory = os.path.dirname(path)
+        if directory and not os.path.exists(directory):
+            try:
+                os.makedirs(directory)
+            except Exception as e:
+                raise ValueError(f"Failed to create directory {directory}: {e}")
+        if directory and not os.access(directory, os.W_OK):
+            raise ValueError(f"The directory {directory} is not writable.")
+        
+        self.model.save_weights(path)
 
     def load_model(self, path):
-        pass
-
+        if not isinstance(path, str) or len(path.strip()) == 0:
+            raise ValueError("The provided path must be a non-empty string.")
+        
+        if not path.endswith(".weights.h5"):
+            path = path + ".weights.h5"
+        
+        if not os.path.exists(path):
+            raise ValueError(f"The file {path} does not exist.")
+        
+        try:
+            self.model.load_weights(path)
+        except Exception as e:
+            raise ValueError(f"Failed to load weights from {path}: {e}")
