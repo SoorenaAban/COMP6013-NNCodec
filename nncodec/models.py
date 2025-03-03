@@ -11,7 +11,6 @@ class Symbol:
         if not isinstance(data, bytes):
             raise ValueError("Data should be in form of bytes")
         self.data = data
-        self.id = uuid.uuid4()
 
     def __eq__(self, other):
         if isinstance(other, Symbol):
@@ -22,7 +21,7 @@ class Symbol:
         return str(self.data)
 
     def __hash__(self):
-        return hash(self.id)
+        return hash(self.data)
 
 class SymbolFrequency:
     """ SymbolFrequency class represents a single symbol in the data with its frequency"""
@@ -73,9 +72,9 @@ class Dictionary:
 class CompressedModel:
     """To be used to represent the compressed file"""
     def __init__(self):
-        self.length = 0 # 6 byes
         self.vocab_code = None # 2 bytes
         self.version = None # 2 bytes
+        self.preprocessor_header = None
         self.data = None
         pass
 

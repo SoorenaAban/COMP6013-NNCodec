@@ -113,38 +113,30 @@ class base_preprocessor(abc.ABC):
 #         return data
 
 class byte_preprocessor(base_preprocessor):
-    ''' Byte Preprocessor. Where each byte of data is assgined to a symbol'''
+    ''' Byte Preprocessor: each byte of data is assigned to a symbol. '''
     def __init__(self):
         pass
 
+    @property
     def header_size(self):
-        return 0 #for now, the header size will be 0
+        return 32
 
+    @property
     def code(self):
         return 3
 
     def convert_to_symbols(self, data):
-        """ Convert data to binary representation
-
-        Args:
-            data: a data object, should be in form of bytes.
-
-        Returns:
-            _type_: a colelction of symbols representing the data
-        """
-        #validate data
         if not isinstance(data, bytes):
             raise ValueError("Data should be in form of bytes")
-        #for now, the the dictionary will be constructed that will contain all permutations of a byte
+        
         dictionary = Dictionary()
-        for i in range(256):
-            dictionary.add(Symbol(i.to_bytes(1, 'big')))
-
         symbols = []
         for byte in data:
-            #make sure the symbol is in dictionary
-            
-            symbols.append(Symbol(bytes([byte])))
+            byte_data = bytes([byte])
+            symbol = Symbol(byte_data)
+            symbols.append(symbol)
+            if not dictionary.contains_data(byte_data):
+                dictionary.add(symbol)
         return symbols, dictionary
 
     def convert_from_symbols(self, symbols):
@@ -153,13 +145,19 @@ class byte_preprocessor(base_preprocessor):
             data += symbol.data
         return data
 
+    def encode_dictionary_for_header(self, dictionary):
+        header_int = 0
+        for symbol in dictionary.symbols:
+            byte_val = symbol.data[0]
+            header_int |= (1 << byte_val)
+        return header_int.to_bytes(32, 'little')
+
     def construct_dictionary_from_header(self, data):
-        #for now, a dictionary will be constructed that will contain all permutations of a byte
+        if len(data) != 32:
+            raise ValueError("Header data must be exactly 32 bytes")
+        header_int = int.from_bytes(data, 'little')
         dictionary = Dictionary()
         for i in range(256):
-            dictionary.add(Symbol(i.to_bytes(1, 'big')))
+            if header_int & (1 << i):
+                dictionary.add(Symbol(i.to_bytes(1, 'big')))
         return dictionary
-
-    def encode_dictionary_for_header(self, dictionary):
-        #for now, the dictionary will be an array of bytes
-        return b''
