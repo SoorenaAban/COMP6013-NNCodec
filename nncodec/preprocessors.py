@@ -112,8 +112,89 @@ class base_preprocessor(abc.ABC):
 #             data += symbol.data
 #         return data
 
+class ascii_char_preprocessor(base_preprocessor):
+    """ ASCII Char Preprocessor: each ascii character is assigned to a symbol."""
+    def __init__(self):
+        pass
+    
+    @property
+    def header_size(self):
+        return 16
+    
+    @property
+    def code(self):
+        return 4
+    
+    def convert_to_symbols(self, data):
+        
+        if not isinstance(data, bytes):
+            raise ValueError("Data should be in form of bytes")
+        
+        try:
+            data.decode('ascii')
+        except UnicodeDecodeError:
+            raise ValueError("Data should be in form of ascii characters")
+        
+        uppercase_flag_symbol = Symbol(b'\x82')
+        dictionary = Dictionary()
+        symbols = []
+        for byte in data:
+            if byte >= 65 and byte <= 90:
+                symbols.append(Symbol(b'\x82'))
+                lower_byte = byte + 32
+                symbols.append(Symbol(bytes([lower_byte])))
+                if not dictionary.contains_data(bytes([lower_byte])):
+                    dictionary.add(Symbol(bytes([lower_byte])))
+            else:
+                symbols.append(Symbol(bytes([byte])))
+                if not dictionary.contains_data(bytes([byte])):
+                    dictionary.add(Symbol(bytes([byte])))
+        
+        if not dictionary.contains_data(uppercase_flag_symbol.data):
+            dictionary.add(uppercase_flag_symbol)
+        
+        return symbols, dictionary
+    
+    def convert_from_symbols(self, symbols):
+        data = b''
+        uppercase_flag = False
+        for symbol in symbols:
+            if symbol.data == b'\x82':
+                uppercase_flag = True
+            else:
+                if uppercase_flag:
+                    char = symbol.data.decode('ascii').upper()
+                    data += char.encode('ascii')
+                    uppercase_flag = False
+                else:
+                    data += symbol.data
+        return data
+    
+    def encode_dictionary_for_header(self, dictionary):
+        header_int = 0
+        symbols_to_encode = [s for s in dictionary.symbols if s.data != b'\x82']
+        for symbol in symbols_to_encode:
+            char_val = symbol.data[0]
+            header_int |= (1 << char_val)
+        return header_int.to_bytes(16, 'little')
+    
+    def construct_dictionary_from_header(self, data):
+        if len(data) != 16:
+            raise ValueError("Header data must be exactly 16 bytes")
+        header_int = int.from_bytes(data, 'little')
+        dictionary = Dictionary()
+        for i in range(128):
+            if header_int & (1 << i):
+                dictionary.add(Symbol(chr(i).encode('ascii')))
+                
+        uppercase_flag_symbol = Symbol(b'\x82')
+        if not dictionary.contains_data(uppercase_flag_symbol.data):
+            dictionary.add(uppercase_flag_symbol)
+        return dictionary
+        
+
 class byte_preprocessor(base_preprocessor):
-    ''' Byte Preprocessor: each byte of data is assigned to a symbol. '''
+    """ Byte Preprocessor: each byte of data is assigned to a symbol. """
     def __init__(self):
         pass
 
