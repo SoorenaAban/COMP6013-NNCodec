@@ -1,3 +1,5 @@
+#loger.py
+
 from .models import LogMessage, LogType, ModuleStage, LogProgress
 
 class Logger:

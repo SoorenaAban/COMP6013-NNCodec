@@ -1,6 +1,10 @@
 # trainers.py
 
 import abc
+from .prediction_models import tf_prediction_model
+from .models import Dictionary
+from .keras_models import TFPredictionDefaultKerasModel
+
 
 class base_trainer(abc.ABC):
     @abc.abstractmethod
@@ -41,10 +45,9 @@ class base_trainer(abc.ABC):
 
 
 class tf_trainer(base_trainer):
-    def __init__(self, dictionary, model_config, model_weights_path=None):
-        from nncodec.prediction_models import tf_prediction_model
+    def __init__(self, dictionary, keras_model, model_weights_path=None):
         self.prediction_model = tf_prediction_model(dictionary,
-                                                    settings_override=model_config,
+                                                    keras_model,
                                                     model_weights_path=model_weights_path)
 
     def save(self, filepath):

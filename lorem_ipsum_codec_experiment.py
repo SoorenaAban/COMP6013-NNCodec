@@ -28,16 +28,17 @@ def main():
     encoding_time_start = time.time()
     encoded_data = byte_codec.compress(lorem_ipsum_bytes)
     encoding_time_end = time.time()
-    print(f"Sized of encoded data: {len(encoded_data)}")
-    print(f"Compression ratio: {len(encoded_data)/len(lorem_ipsum_bytes)}")
+    print(f"Sized of encoded data: {len(encoded_data.data)}")
     print(f"Encoding time: {encoding_time_end - encoding_time_start} seconds")
     
     decoding_time_start = time.time()
     decoded_data = byte_codec.decompress(encoded_data)
+    decoded_string = decoded_data.decode("utf-8")
+    print(f"Decoded data: {decoded_string}")
     decoding_time_end = time.time()
-    decompressed_text = decoded_data.decode("ascii")
-    print(decompressed_text)
     print(f"Decoding time: {decoding_time_end - decoding_time_start} seconds")
+    
+    print(f"Compression ratio: {len(encoded_data.data) / len(lorem_ipsum_bytes)}")
     
 if __name__ == "__main__":
     main()

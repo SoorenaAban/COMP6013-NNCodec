@@ -6,13 +6,10 @@ import os
 import tempfile
 import struct
 
-from .models import Symbol
-
 class coder_base(abc.ABC):
-    def __init__(self, settings_override=None):
+    def __init__(self):
         """
         Initialize the arithmetic coder.
-        (Todo: add tuning parameters later)
         """
         pass
 
@@ -94,8 +91,6 @@ class arithmetic_coder(coder_base):
                     break
             if symbol_index is None:
                 raise ValueError("Symbol not found in dictionary")
-            
-            symbol_probability = probs[symbol_index]
 
             sym_low = cum_freq[symbol_index - 1] if symbol_index > 0 else 0
             sym_high = cum_freq[symbol_index]
@@ -117,7 +112,6 @@ class arithmetic_coder(coder_base):
             symbols_encoded += 1
             
             bits_after = len(output_bits)
-            bits_for_this_symbol = bits_after - bits_before
             
         for _ in range(self.state_bits):
             bit = low >> (self.state_bits - 1)
@@ -175,17 +169,9 @@ class arithmetic_coder(coder_base):
                     break
             if symbol_index is None:
                 raise ValueError("Failed to decode symbol: no matching frequency range found.")
-            
-            symbol_probability = probs[symbol_index]
 
             sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
             decoded_symbol = sorted_symbols[symbol_index]
-            
-            
-            
-            # print(f"[DEBUG] Decoded symbol: '{decoded_symbol.data}', "
-            #       f"(prob={symbol_probability:.6f}), "
-            #       f"symbol_count={symbol_count+1}/{num_symbols}")
             
             decoded_symbols.append(decoded_symbol)
 
@@ -261,16 +247,6 @@ class arithmetic_coder(coder_base):
         probabilities = freqs / total
         return probabilities
 
-    # @property
-    # def current_state(self):
-    #     """
-    #     Return the current internal state of the arithmetic coder.
-        
-    #     Returns:
-    #         dict: Contains 'low', 'high', and 'state_bits'.
-    #     """
-    #     return {"low": self.low, "high": self.high, "state_bits": self.state_bits}
-
 class arithmetic_coder_deep:
     def __init__(self, settings_override=None):
         """
@@ -335,7 +311,6 @@ class arithmetic_coder_deep:
         return probabilities
 
     def encode(self, input_symbols, prediction_model):
-        # Input validation.
         if not isinstance(input_symbols, list):
             raise ValueError("input_symbols must be a list.")
         if prediction_model is None:
@@ -524,7 +499,7 @@ class arithmetic_coder_deep:
         epsilon = 1e-10
         
         for _ in range(message_length):
-            context = decoded_symbols[:]  # current decoded context
+            context = decoded_symbols[:] 
             probs_sf = prediction_model.predict(context)
             if not isinstance(probs_sf, list):
                 raise ValueError("Prediction output must be a list of SymbolFrequency objects.")
@@ -559,7 +534,6 @@ class arithmetic_coder_deep:
             new_high = low + range_width * (upper_freq / total)
             low, high = new_low, new_high
             
-            # Renormalization.
             while True:
                 if high < 0.5:
                     low *= 2

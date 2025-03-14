@@ -17,11 +17,6 @@ class base_preprocessor(abc.ABC):
         """the amount of bytes required for the header"""
         pass
 
-    # @abc.abstractmethod
-    # def get_terminals(self):
-    #     """returns the header terminator in form of bytes, in case no set size for the header is present"""
-    #     pass
-
     @abc.abstractmethod
     def convert_to_symbols(self, data):
         """ 
@@ -82,35 +77,6 @@ class base_preprocessor(abc.ABC):
     def construct_dictionary_from_header(self, data):
         """construct a dictionary of symbols from the header data and based on the preprocessor type"""
         pass
-
-# class charPreprocessor(base_preprocessor):
-#     def convert_to_symbols(self, data):
-#         """ Convert text to binary representation
-
-#         Args:
-#             data (string): a data object, in form of binary.
-
-#         Returns:
-#             _type_: a colelction of symbols representing the data
-#         """
-
-#         symbols = []
-#         for char in data:
-#             symbols.append(models.Symbol(char))
-
-#     def convert_from_symbols(self, symbols):
-#         """ Convert symbols back to text
-
-#         Args:
-#             symbols: a collection of symbols
-
-#         Returns:
-#             _type_: the data object in bytes
-#         """
-#         data = b''
-#         for symbol in symbols:
-#             data += symbol.data
-#         return data
 
 class ascii_char_preprocessor(base_preprocessor):
     """ ASCII Char Preprocessor: each ascii character is assigned to a symbol."""

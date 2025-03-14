@@ -12,12 +12,10 @@ from nncodec import prediction_models as pred
 
 class TestArithmeticCoder(unittest.TestCase):
     def setUp(self):
-        # Create a dummy dictionary with symbols: a, b, c.
         self.dictionary = models.Dictionary()
         symbols = [models.Symbol(b'a'), models.Symbol(b'b'), models.Symbol(b'c')]
         self.dictionary.add_multiple(symbols)
         
-        # Settings override for arithmetic coder.
         self.settings_override = {
             'ARITH_SCALING_FACTOR': 10000000,
             'ARITH_OFFSET': 1

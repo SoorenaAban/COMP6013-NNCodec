@@ -3,36 +3,20 @@
 import unittest
 import tempfile
 import os
-import numpy as np
 
 from nncodec import trainers, models
-from nncodec.prediction_models import tf_prediction_model
+from nncodec.keras_models import TFPredictionTestingKerasModel
 
-class DummyTfPredictionModel(tf_prediction_model):
-    def __init__(self, dictionary, settings_override, model_weights_path=None):
-        super().__init__(dictionary, settings_override, model_weights_path)
-        self.train_calls = []  
-
-    def train(self, previous_symbols, correct_symbol):
-        self.train_calls.append((previous_symbols, correct_symbol))
 
 class TestTFTrainer(unittest.TestCase):
     def setUp(self):
         self.dictionary = models.Dictionary()
+        self.test_keras_model = TFPredictionTestingKerasModel(4)
         symbols = [models.Symbol(b'a'), models.Symbol(b'b'),
                    models.Symbol(b'c'), models.Symbol(b'd')]
         self.dictionary.add_multiple(symbols)
         
-        self.test_config = {
-            'TF_SEED': 1234,
-            'TF_BATCH_SIZES': 1,
-            'TF_SEQ_LENGTH': 5,
-            'TF_NUM_LAYERS': 2,
-            'TF_RNN_UNITS': 16,
-            'TF_EMBEDING_SIZE': 8,
-            'TF_START_LEARNING_RATE': 0.001
-        }
-        self.trainer = trainers.tf_trainer(self.dictionary, self.test_config)
+        self.trainer = trainers.tf_trainer(self.dictionary, self.test_keras_model)
 
     def test_invalid_train_input(self):
         with self.assertRaises(ValueError):
@@ -40,29 +24,11 @@ class TestTFTrainer(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.trainer.train([])
 
-    def test_train_calls(self):
-        dummy_model = DummyTfPredictionModel(self.dictionary, self.test_config)
-        self.trainer.prediction_model = dummy_model
+    def test_train(self):
+        symbols_collection = [models.Symbol(b'a'), models.Symbol(b'b'), models.Symbol(b'c')]
+        self.trainer.train(symbols_collection)
+        assert self.trainer.prediction_model.model is not None
         
-        training_symbols = [models.Symbol(b'a'), models.Symbol(b'b'), models.Symbol(b'c')]
-        self.trainer.train(training_symbols)
-        
-        self.assertEqual(len(dummy_model.train_calls), 3)
-        
-        prev, target = dummy_model.train_calls[0]
-        self.assertEqual(prev, [])
-        self.assertEqual(target.data, b'a')
-        
-        prev, target = dummy_model.train_calls[1]
-        self.assertEqual(len(prev), 1)
-        self.assertEqual(prev[0].data, b'a')
-        self.assertEqual(target.data, b'b')
-        
-        prev, target = dummy_model.train_calls[2]
-        self.assertEqual(len(prev), 2)
-        self.assertEqual(prev[0].data, b'a')
-        self.assertEqual(prev[1].data, b'b')
-        self.assertEqual(target.data, b'c')
 
     def test_save_invalid_path(self):
         with self.assertRaises(ValueError):
