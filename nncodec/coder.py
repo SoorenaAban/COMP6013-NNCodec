@@ -42,20 +42,19 @@ class coder_base(abc.ABC):
         """
         pass
 
+class arithmetic_coder_settings:
+    def __init__(self, scaling_factor=10000000, offset=1):
+        self.scaling_factor = scaling_factor
+        self.offset = offset
+
 class arithmetic_coder(coder_base):
-    def __init__(self, settings_override=None):
+    def __init__(self, artihmetic_coder_settings):
         
-        if settings_override is None:
-            try:
-                import settings
-                self.scaling_factor = getattr(settings, 'ARITH_SCALING_FACTOR', 10000000)
-                self.offset = getattr(settings, 'ARITH_OFFSET', 1)
-            except ImportError:
-                self.scaling_factor = 10000000
-                self.offset = 1
-        else:
-            self.scaling_factor = settings_override.get('ARITH_SCALING_FACTOR', 10000000)
-            self.offset = settings_override.get('ARITH_OFFSET', 1)
+        if not isinstance(artihmetic_coder_settings, arithmetic_coder_settings):
+            raise ValueError("artihmetic_coder_settings must be an instance of arithmetic_coder_settings")
+        
+        self.scaling_factor = artihmetic_coder_settings.scaling_factor
+        self.offset = artihmetic_coder_settings.offset
         
         self.low = 0
         self.high = (1 << 32) - 1
@@ -248,21 +247,15 @@ class arithmetic_coder(coder_base):
         return probabilities
 
 class arithmetic_coder_deep:
-    def __init__(self, settings_override=None):
+    def __init__(self, coder_settings):
         """
         Initializes arithmetic_coder_deep with optional settings.
-        
-        Args:
-            settings_override (dict): May contain:
-                - 'ARITH_SCALING_FACTOR'
-                - 'ARITH_OFFSET'
         """
-        if settings_override is None:
-            settings_override = {}
-        if not isinstance(settings_override, dict):
-            raise ValueError("settings_override must be a dictionary.")
-        self.scaling_factor = settings_override.get("ARITH_SCALING_FACTOR", 10000000)
-        self.offset = settings_override.get("ARITH_OFFSET", 1)
+        if not isinstance(coder_settings, arithmetic_coder_settings):
+            raise ValueError("coder_settings must be an instance of arithmetic_coder_settings")
+        
+        self.scaling_factor = coder_settings.scaling_factor
+        self.offset = coder_settings.offset
 
     def probabilities_to_code(self, probs):
         """

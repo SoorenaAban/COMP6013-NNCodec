@@ -7,11 +7,11 @@ import numpy as np
 import tensorflow as tf
 from keras import mixed_precision
 
-from .prediction_models import tf_prediction_model
-from .preprocessors import byte_preprocessor
-from .coder import arithmetic_coder, arithmetic_coder_deep
-from .models import CompressedModel
-from .keras_models import SimpleGRUModel
+from .prediction_models import *
+from .preprocessors import *
+from .coder import *
+from .models import *
+from .keras_models import *
 from .settings import *
 
 def enable_determinism(seed):
@@ -74,7 +74,8 @@ class byte_codec(base_codec):
         compressed_data.preprocessor_header = prpr.encode_dictionary_for_header(dictionary)
         keras_model = SimpleGRUModel(dictionary.get_size())
         predictor = tf_prediction_model(dictionary, keras_model)
-        codr = arithmetic_coder()
+        coder_settings = arithmetic_coder_settings()
+        codr = arithmetic_coder(coder_settings)
         compressed_data.data = codr.encode(syms, predictor)
         return compressed_data
     
@@ -90,7 +91,8 @@ class byte_codec(base_codec):
         dictionary = prpr.construct_dictionary_from_header(compressed_model.preprocessor_header)
         keras_model = SimpleGRUModel(dictionary.get_size())
         predictor = tf_prediction_model(dictionary, keras_model)
-        codr = arithmetic_coder()
+        coder_settings = arithmetic_coder_settings()
+        codr = arithmetic_coder(coder_settings)
         syms = codr.decode(data, dictionary, predictor)
         return prpr.convert_from_symbols(syms)
     
@@ -109,7 +111,8 @@ class byte_codec_deep(base_codec):
         compressed_data.preprocessor_header = prpr.encode_dictionary_for_header(dictionary)
         keras_model = SimpleGRUModel(dictionary.get_size())
         predictor = tf_prediction_model(dictionary, keras_model)
-        codr = arithmetic_coder_deep()
+        coder_settings = arithmetic_coder_settings()
+        codr = arithmetic_coder_deep(coder_settings)
         compressed_data.data = codr.encode(syms, predictor)
         return compressed_data
     
@@ -125,6 +128,7 @@ class byte_codec_deep(base_codec):
         dictionary = prpr.construct_dictionary_from_header(compressed_model.preprocessor_header)
         keras_model = SimpleGRUModel(dictionary.get_size())
         predictor = tf_prediction_model(dictionary, keras_model)
-        codr = arithmetic_coder_deep()
+        coder_settings = arithmetic_coder_settings()
+        codr = arithmetic_coder_deep(coder_settings)
         syms = codr.decode(data, dictionary, predictor)
         return prpr.convert_from_symbols(syms)

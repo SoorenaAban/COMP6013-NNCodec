@@ -16,11 +16,9 @@ class TestArithmeticCoder(unittest.TestCase):
         symbols = [models.Symbol(b'a'), models.Symbol(b'b'), models.Symbol(b'c')]
         self.dictionary.add_multiple(symbols)
         
-        self.settings_override = {
-            'ARITH_SCALING_FACTOR': 10000000,
-            'ARITH_OFFSET': 1
-        }
-        self.coder = coder.arithmetic_coder(settings_override=self.settings_override)
+        self.arith_settings = coder.arithmetic_coder_settings()
+        
+        self.coder = coder.arithmetic_coder(self.arith_settings)
         self.prediction_model = pred.testing_prediction_model(self.dictionary)
 
     def test_probabilities_to_code(self):
@@ -73,11 +71,9 @@ class TestArithmeticCoderDeep(unittest.TestCase):
         symbols = [models.Symbol(b'a'), models.Symbol(b'b'), models.Symbol(b'c')]
         self.dictionary.add_multiple(symbols)
         
-        self.settings_override = {
-            'ARITH_SCALING_FACTOR': 10000000,
-            'ARITH_OFFSET': 1
-        }
-        self.coder_deep = coder.arithmetic_coder_deep(settings_override=self.settings_override)
+        self.arith_settings = coder.arithmetic_coder_settings()
+
+        self.coder_deep = coder.arithmetic_coder_deep(self.arith_settings)
         self.prediction_model = pred.testing_prediction_model(self.dictionary)
         
         def dummy_save_model(self, path):

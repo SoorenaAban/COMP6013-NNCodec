@@ -1,26 +1,8 @@
 #settings.py
 
-import os
-
-#Logging settings
-SAVE_INFO = True
-SAVE_WARNING = True
-SAVE_ERROR = True
-LOG_FILE = os.path.join(os.getcwd(), "log.txt")
-PRINT_INFO = True
-PRINT_WARNING = True
-PRINT_ERROR = True
-
 #Coder settings (TODO: actully implement them)
 ARITH_SCALING_FACTOR = 1000000
 ARITH_OFFSET = 1
 
 #TF settings
 TF_SEED = 1234
-TF_BATCH_SIZES = 256
-TF_SEQ_LENGTH =  15
-TF_RNN_UNITS =  1000
-TF_NUM_LAYERS = 6
-TF_EMBEDING_SIZE=1024
-TF_START_LEARNING_RATE = 0.0005
-TF_END_LEARNING_RATE = 0.0002
