@@ -169,3 +169,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+#nn-codec specific
+#ignore content experiment_data/enwik
+experiment_data/enwiks/enwik8
+experiment_data/enwiks/enwik9
