@@ -1,3 +1,5 @@
+#prediction_models_test.py
+
 import unittest
 import numpy as np
 import sys
@@ -22,7 +24,8 @@ class TestTFPredictionModel(unittest.TestCase):
 
     def test_symbols_to_tokens(self):
         tokens = self.model_obj._symbols_to_tokens(self.input_symbols, self.dictionary)
-        self.assertEqual(tokens, [0, 1, 2])
+        self.assertEqual(tokens, [1, 2, 3])
+
 
     def test_preprocess_input(self):
         expected_batch_size = self.model_obj.model.batch_size  

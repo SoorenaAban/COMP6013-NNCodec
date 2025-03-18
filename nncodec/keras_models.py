@@ -31,14 +31,15 @@ class TFKerasModelBase(tf.keras.Model):
         dummy_states = []
         if hasattr(self, 'num_layers') and hasattr(self, 'batch_size') and hasattr(self, 'rnn_units'):
             for _ in range(self.num_layers):
-                state = tf.zeros((self.batch_size, self.rnn_units), dtype=tf.float16)
+                state = tf.zeros((self.batch_size, self.rnn_units), dtype=tf.float32)
                 dummy_states.extend([state, state])
         return dummy_states
 
 
-class TFPredictionDefaultKerasModel(TFKerasModelBase):
+class LstmKerasModel(TFKerasModelBase):
+    """ The parameters of this Lstm Keras subclass are based on the tensorflow-compress library"""
     def __init__(self, vocab_size, **kwargs):
-        super(TFPredictionDefaultKerasModel, self).__init__(**kwargs)
+        super(LstmKerasModel, self).__init__(**kwargs)
         self.batch_size = 256
         self.seq_length = 15
         self.num_layers = 6
@@ -68,7 +69,7 @@ class TFPredictionDefaultKerasModel(TFKerasModelBase):
             self.lstm_layers.append(lstm_layer)
         
         self.last_time_steps = [
-            TFPredictionDefaultKerasModel.LastTimeStep(name=f"final_output_{i}")
+            LstmKerasModel.LastTimeStep(name=f"final_output_{i}")
             for i in range(self.num_layers)
         ]
         
@@ -83,6 +84,7 @@ class TFPredictionDefaultKerasModel(TFKerasModelBase):
         def call(self, inputs):
             return inputs[:, -1, :]
 
+    @tf.function
     def call(self, inputs, training=False):
         expected_inputs = 1 + 2 * self.num_layers
         if not isinstance(inputs, (list, tuple)) or len(inputs) != expected_inputs:

@@ -3,7 +3,7 @@
 import abc
 from .prediction_models import TfPredictionModel
 from .models import Dictionary
-from .keras_models import TFPredictionDefaultKerasModel
+from .keras_models import LstmKerasModel
 
 
 class base_trainer(abc.ABC):

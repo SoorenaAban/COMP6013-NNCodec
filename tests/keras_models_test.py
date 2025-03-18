@@ -4,7 +4,7 @@ import tensorflow as tf
 
 from nncodec.keras_models import (
     TFKerasModelBase,
-    TFPredictionDefaultKerasModel,
+    LstmKerasModel,
     TFPredictionTestingKerasModel,
     SimpleGRUModel,
     StackedGRUModel,
@@ -41,7 +41,7 @@ class KerasModelsTest(unittest.TestCase):
         np.testing.assert_allclose(row_sums, np.ones(model.batch_size), atol=1e-5)
 
     def test_TFPredictionDefaultKerasModel(self):
-        model = TFPredictionDefaultKerasModel(vocab_size=self.vocab_size)
+        model = LstmKerasModel(vocab_size=self.vocab_size)
         dummy_input = self.build_dummy_input(model)
         output = model(dummy_input)
         self.check_output(model, output)

@@ -1,3 +1,5 @@
+#prediction_models.py
+
 import os
 import abc
 import random
@@ -85,14 +87,17 @@ class TfPredictionModel(base_prediction_model):
         tf.keras.utils.set_random_seed(seed)
         tf.config.experimental.enable_op_determinism()
 
-    def __init__(self, dictionary, keras_model, model_weights_path=None):
+    def __init__(self, dictionary, keras_model, model_weights_path=None, use_weighted_average=False):
         """
-        Initialize tf_prediction_model.
+        Initialize TfPredictionModel.
         
         Args:
             dictionary (Dictionary): A Dictionary instance containing Symbol objects.
             keras_model (tf.keras.Model): A pre-configured Keras model (must be derived from TFKerasModelBase).
             model_weights_path (str, optional): Path to model weights.
+            use_weighted_average (bool, optional): Flag indicating whether to combine predictions
+                from multiple windows using a weighted average (True) or use only the last window (False).
+                Default is False.
         """
         if dictionary is None or not isinstance(dictionary, Dictionary):
             raise ValueError("dictionary must be a Dictionary instance and cannot be None")
@@ -113,24 +118,23 @@ class TfPredictionModel(base_prediction_model):
         self.dictionary = dictionary
         mixed_precision.set_global_policy('mixed_float16')
         
-        # Build a symbol lookup.
         self._sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
-        self._token_map = {symbol.data: idx for idx, symbol in enumerate(self._sorted_symbols)}
+        # Reserve 0 for padding; valid tokens start at 1.
+        self._token_map = {symbol.data: idx + 1 for idx, symbol in enumerate(self._sorted_symbols)}
         
-        # Set the provided Keras model.
         self.model = keras_model
         self.model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
             loss='sparse_categorical_crossentropy'
         )
         
-        # Build dummy states by calling the model's helper method.
         self.dummy_states = self.model.get_dummy_states()
         
-        # Build the model by calling it with dummy inputs.
         main_input = tf.zeros((self.model.batch_size, self.model.seq_length), dtype=tf.int32)
         dummy_inputs = [main_input] + self.dummy_states
         _ = self.model(dummy_inputs)
+        
+        self.use_weighted_average = use_weighted_average
         
         if model_weights_path is not None:
             self.load_model(model_weights_path)
@@ -140,6 +144,11 @@ class TfPredictionModel(base_prediction_model):
         return self.model(full_inputs, training=False)
 
     def _symbols_to_tokens(self, symbols, dictionary):
+        """
+        Convert a list of Symbol objects to tokens.
+        
+        Now tokens for valid symbols start at 1, with 0 reserved for padding.
+        """
         if not isinstance(symbols, list):
             raise ValueError("symbols must be a list of Symbol objects")
         if not all(isinstance(s, Symbol) for s in symbols):
@@ -158,16 +167,28 @@ class TfPredictionModel(base_prediction_model):
         """
         Convert a list of Symbol objects into a padded tensor using the model's
         seq_length and batch_size.
+        
+        Current approach:
+         - Convert symbols to tokens (valid tokens start at 1; 0 is reserved for padding).
+         - If the total number of tokens exceeds batch_size * seq_length,
+           discard tokens from the beginning so that only the last batch_size*seq_length tokens are used.
+         - If there are fewer tokens than required, pad with 0s on the left.
+         - Reshape the resulting tokens into a tensor of shape (batch_size, seq_length).
+         
+        TODO: Consider alternative approaches such as generating overlapping windows.
+              Also, consider reserving a dedicated token (e.g., 0) exclusively for padding if needed.
         """
         tokens = self._symbols_to_tokens(symbols, self.dictionary)
-        sequences = [tokens]
-        padded_sequences = utils.pad_sequences(
-            sequences, maxlen=self.model.seq_length, padding='post', truncating='post', value=0
-        )
-        padded_sequences = tf.convert_to_tensor(padded_sequences, dtype=tf.int32)
-        if padded_sequences.shape[0] != self.model.batch_size:
-            padded_sequences = np.tile(padded_sequences, (self.model.batch_size, 1))
-        return tf.convert_to_tensor(padded_sequences, dtype=tf.int32)
+        total_required = self.model.batch_size * self.model.seq_length
+        if len(tokens) > total_required:
+            tokens = tokens[-total_required:]
+        elif len(tokens) < total_required:
+            pad_length = total_required - len(tokens)
+            tokens = [0] * pad_length + tokens  
+        tokens_np = np.array(tokens)
+        tokens_np = tokens_np.reshape((self.model.batch_size, self.model.seq_length))
+        padded_sequences = tf.convert_to_tensor(tokens_np, dtype=tf.int32)
+        return padded_sequences
 
     def _postprocess_predictions(self, raw_output):
         if raw_output is None:
@@ -190,12 +211,32 @@ class TfPredictionModel(base_prediction_model):
         return batch_result
 
     def predict(self, symbols):
+        """
+        Predict the next symbol(s) given a list of input symbols.
+        
+        The input symbols are first split into non-overlapping windows.
+        If there are more tokens than required, tokens from the beginning are discarded
+        so that only the most recent tokens are used.
+        
+        By default, the prediction is generated using only the last window.
+        If self.use_weighted_average is True, predictions from all windows are combined
+        using a linear weighted average (with later windows given higher weight).
+        """
         if symbols is None or not isinstance(symbols, list):
             raise ValueError("symbols must be a list of Symbol objects")
         main_input_tensor = self._preprocess_input(symbols)
         full_inputs = [main_input_tensor] + self.dummy_states
-        raw_output = self.model(full_inputs)
-        predictions = self._postprocess_predictions(raw_output)
+        raw_output = self.model(full_inputs)  
+        raw_output_np = raw_output.numpy() if isinstance(raw_output, tf.Tensor) else raw_output
+        if not self.use_weighted_average:
+            selected_output = raw_output_np[-1]  
+        else:
+            batch_size = raw_output_np.shape[0]
+            weights = np.arange(1, batch_size + 1, dtype=np.float32)
+            weights = weights / np.sum(weights)
+            selected_output = np.average(raw_output_np, axis=0, weights=weights)
+        selected_output = np.expand_dims(selected_output, axis=0)
+        predictions = self._postprocess_predictions(selected_output)
         return predictions[0]
 
     @tf.function
@@ -246,4 +287,3 @@ class TfPredictionModel(base_prediction_model):
             self.model.load_weights(path)
         except Exception as e:
             raise ValueError(f"Failed to load weights from {path}: {e}")
-
