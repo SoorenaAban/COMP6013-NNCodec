@@ -58,6 +58,77 @@ class base_codec(abc.ABC):
             list[bytes]: The list of bytes representing the decoded data
         """
         pass
+
+class BaseCodec:
+    
+    
+    def compress(self, data, preprocessor, predictor, coder):
+        """
+        Compresses the input data.
+
+        Args:
+            data (list[bytes]): The list of bytes representing the data
+            
+        Returns:
+            CompressedModel: The compressed model
+        """
+        if not isinstance(data, bytes):
+            raise ValueError("Data should be in form of bytes")
+        
+        if not isinstance(preprocessor, base_preprocessor):
+            raise ValueError("Preprocessor should be of type base_preprocessor")
+        
+        if not isinstance(predictor, base_prediction_model):
+            raise ValueError("Predictor should be of type base_prediction_model")
+        
+        if not isinstance(coder, CoderBase):
+            raise ValueError("Coder should be of type base_coder")
+        
+        compressed_model = CompressedModel()
+        compressed_model.version = 1
+        compressed_model.vocab_code = preprocessor.code
+        syms, dictionary = preprocessor.convert_to_symbols(data)
+        compressed_model.preprocessor_header = preprocessor.encode_dictionary_for_header(dictionary)
+        compressed_model.data = coder.encode(syms, predictor)
+        return compressed_model
+    
+    def decompress(self, compressed_model, preprocessor, predictor, coder):
+        """
+        Decompresses encoded data.
+
+        Args:
+            compressed_data (CompressedModel): The compressed model
+            
+        Returns:
+            list[bytes]: The list of bytes representing the decoded data
+        """
+        if not isinstance(compressed_model, CompressedModel):
+            raise ValueError("Data should be in form of CompressedModel")
+        
+        if not isinstance(preprocessor, base_preprocessor):
+            raise ValueError("Preprocessor should be of type base_preprocessor")
+        
+        if not isinstance(predictor, base_prediction_model):
+            raise ValueError("Predictor should be of type base_prediction_model")
+        
+        if not isinstance(coder, CoderBase):
+            raise ValueError("Coder should be of type base_coder")
+        
+        if compressed_model.version != 1:
+            raise ValueError("Version not supported")
+        
+        if compressed_model.vocab_code != preprocessor.code:
+            raise ValueError("Preprocessor not supported")
+        
+        data = compressed_model.data
+        dictionary = preprocessor.construct_dictionary_from_header(compressed_model.preprocessor_header)
+        syms = coder.decode(data, dictionary, predictor)
+        return preprocessor.convert_from_symbols(syms)
+
+
+class ByteCodec(BaseCodec):
+    pass
+
 class byte_codec(base_codec):
     
     def __init__(self):
@@ -73,9 +144,9 @@ class byte_codec(base_codec):
         syms, dictionary = prpr.convert_to_symbols(data)
         compressed_data.preprocessor_header = prpr.encode_dictionary_for_header(dictionary)
         keras_model = SimpleGRUModel(dictionary.get_size())
-        predictor = tf_prediction_model(dictionary, keras_model)
-        coder_settings = arithmetic_coder_settings()
-        codr = arithmetic_coder(coder_settings)
+        predictor = TfPredictionModel(dictionary, keras_model)
+        coder_settings = ArithmeticCoderSettings()
+        codr = ArithmeticCoder(coder_settings)
         compressed_data.data = codr.encode(syms, predictor)
         return compressed_data
     
@@ -90,9 +161,9 @@ class byte_codec(base_codec):
         prpr = byte_preprocessor()
         dictionary = prpr.construct_dictionary_from_header(compressed_model.preprocessor_header)
         keras_model = SimpleGRUModel(dictionary.get_size())
-        predictor = tf_prediction_model(dictionary, keras_model)
-        coder_settings = arithmetic_coder_settings()
-        codr = arithmetic_coder(coder_settings)
+        predictor = TfPredictionModel(dictionary, keras_model)
+        coder_settings = ArithmeticCoderSettings()
+        codr = ArithmeticCoder(coder_settings)
         syms = codr.decode(data, dictionary, predictor)
         return prpr.convert_from_symbols(syms)
     
@@ -110,9 +181,9 @@ class byte_codec_deep(base_codec):
         syms, dictionary = prpr.convert_to_symbols(data)
         compressed_data.preprocessor_header = prpr.encode_dictionary_for_header(dictionary)
         keras_model = SimpleGRUModel(dictionary.get_size())
-        predictor = tf_prediction_model(dictionary, keras_model)
-        coder_settings = arithmetic_coder_settings()
-        codr = arithmetic_coder_deep(coder_settings)
+        predictor = TfPredictionModel(dictionary, keras_model)
+        coder_settings = ArithmeticCoderSettings()
+        codr = ArithmeticCoderDeep(coder_settings)
         compressed_data.data = codr.encode(syms, predictor)
         return compressed_data
     
@@ -127,8 +198,8 @@ class byte_codec_deep(base_codec):
         prpr = byte_preprocessor()
         dictionary = prpr.construct_dictionary_from_header(compressed_model.preprocessor_header)
         keras_model = SimpleGRUModel(dictionary.get_size())
-        predictor = tf_prediction_model(dictionary, keras_model)
-        coder_settings = arithmetic_coder_settings()
-        codr = arithmetic_coder_deep(coder_settings)
+        predictor = TfPredictionModel(dictionary, keras_model)
+        coder_settings = ArithmeticCoderSettings()
+        codr = ArithmeticCoderDeep(coder_settings)
         syms = codr.decode(data, dictionary, predictor)
         return prpr.convert_from_symbols(syms)

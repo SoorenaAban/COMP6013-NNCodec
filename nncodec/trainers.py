@@ -1,7 +1,7 @@
 # trainers.py
 
 import abc
-from .prediction_models import tf_prediction_model
+from .prediction_models import TfPredictionModel
 from .models import Dictionary
 from .keras_models import TFPredictionDefaultKerasModel
 
@@ -46,7 +46,7 @@ class base_trainer(abc.ABC):
 
 class tf_trainer(base_trainer):
     def __init__(self, dictionary, keras_model, model_weights_path=None):
-        self.prediction_model = tf_prediction_model(dictionary,
+        self.prediction_model = TfPredictionModel(dictionary,
                                                     keras_model,
                                                     model_weights_path=model_weights_path)
 

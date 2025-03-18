@@ -68,7 +68,7 @@ class testing_prediction_model(base_prediction_model):
         pass
 
 
-class tf_prediction_model(base_prediction_model):
+class TfPredictionModel(base_prediction_model):
     def enable_determinism(self, seed):
         """
         Initialize random seeds for determinism.
