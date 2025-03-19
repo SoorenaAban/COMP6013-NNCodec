@@ -72,7 +72,7 @@ class Dictionary:
 class CompressedModel:
     """To be used to represent the compressed file"""
     def __init__(self):
-        self.vocab_code = None # 2 bytes
+        self.preprocessor_code = None # 2 bytes
         self.version = None # 2 bytes
         self.preprocessor_header = None
         self.data = None

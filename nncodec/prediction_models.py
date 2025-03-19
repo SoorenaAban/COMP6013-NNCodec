@@ -256,7 +256,7 @@ class TfPredictionModel(base_prediction_model):
         main_input_tensor = self._preprocess_input(previous_symbols)
         full_inputs = [main_input_tensor] + self.dummy_states
         target_tokens = self._symbols_to_tokens([correct_symbol], self.dictionary)
-        target_token = target_tokens[0]
+        target_token = target_tokens[0] - 1 
         target_tensor = tf.fill([self.model.batch_size], target_token)
         loss = self._train_step(full_inputs, target_tensor)
         tf.print("Training loss:", loss)

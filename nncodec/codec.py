@@ -86,7 +86,7 @@ class BaseCodec:
         
         compressed_model = CompressedModel()
         compressed_model.version = 1
-        compressed_model.vocab_code = preprocessor.code
+        compressed_model.preprocessor_code = preprocessor.code
         syms, dictionary = preprocessor.convert_to_symbols(data)
         compressed_model.preprocessor_header = preprocessor.encode_dictionary_for_header(dictionary)
         compressed_model.data = coder.encode(syms, predictor)
@@ -117,7 +117,7 @@ class BaseCodec:
         if compressed_model.version != 1:
             raise ValueError("Version not supported")
         
-        if compressed_model.vocab_code != preprocessor.code:
+        if compressed_model.preprocessor_code != preprocessor.code:
             raise ValueError("Preprocessor not supported")
         
         data = compressed_model.data
@@ -140,7 +140,7 @@ class byte_codec(base_codec):
         compressed_data = CompressedModel()
         compressed_data.version = 1
         prpr = byte_preprocessor()
-        compressed_data.vocab_code = prpr.code
+        compressed_data.preprocessor_code = prpr.code
         syms, dictionary = prpr.convert_to_symbols(data)
         compressed_data.preprocessor_header = prpr.encode_dictionary_for_header(dictionary)
         keras_model = SimpleGRUModel(dictionary.get_size())
@@ -155,7 +155,7 @@ class byte_codec(base_codec):
             raise ValueError("Data should be in form of CompressedModel")
         if compressed_model.version != 1:
             raise ValueError("Version not supported")
-        if compressed_model.vocab_code != byte_preprocessor().code:
+        if compressed_model.preprocessor_code != byte_preprocessor().code:
             raise ValueError("Preprocessor not supported")
         data = compressed_model.data
         prpr = byte_preprocessor()
@@ -177,7 +177,7 @@ class byte_codec_deep(base_codec):
         compressed_data = CompressedModel()
         compressed_data.version = 1
         prpr = byte_preprocessor()
-        compressed_data.vocab_code = prpr.code
+        compressed_data.preprocessor_code = prpr.code
         syms, dictionary = prpr.convert_to_symbols(data)
         compressed_data.preprocessor_header = prpr.encode_dictionary_for_header(dictionary)
         keras_model = SimpleGRUModel(dictionary.get_size())
@@ -192,7 +192,7 @@ class byte_codec_deep(base_codec):
             raise ValueError("Data should be in form of CompressedModel")
         if compressed_model.version != 1:
             raise ValueError("Version not supported")
-        if compressed_model.vocab_code != byte_preprocessor().code:
+        if compressed_model.preprocessor_code != byte_preprocessor().code:
             raise ValueError("Preprocessor not supported")
         data = compressed_model.data
         prpr = byte_preprocessor()

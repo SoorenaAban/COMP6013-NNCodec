@@ -208,3 +208,11 @@ class byte_preprocessor(base_preprocessor):
             if header_int & (1 << i):
                 dictionary.add(Symbol(i.to_bytes(1, 'big')))
         return dictionary
+
+def get_preprocessor(code):
+    if code == 3:
+        return byte_preprocessor()
+    elif code == 4:
+        return ascii_char_preprocessor()
+    else:
+        raise ValueError("Preprocessor code not supported")
