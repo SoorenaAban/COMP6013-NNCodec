@@ -52,7 +52,7 @@ class Logger:
     def __init__(self):
         self.logs = []
         
-        self.recod_info = True
+        self.record_info = True
         self.record_warning = True
         self.record_error = True
         
@@ -68,13 +68,13 @@ class Logger:
         pass
 
     def log(self, log):
-        if (not isinstance(log, Log) or not isinstance(log, str)):
+        if not (isinstance(log, Log) or isinstance(log, str)):
             raise ValueError("Log must be an instance of Log class or a string")
         if isinstance(log, str):
             log = Log("General", LogLevel.INFO, log)
         
         if log.level == LogLevel.INFO:
-            if self.recod_info:
+            if self.record_info:
                 self.logs.append(log)
             if self.display_info:
                 print(log)
