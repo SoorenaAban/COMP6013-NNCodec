@@ -178,12 +178,16 @@ class BytePreprocessor(BasePreprocessor):
         
         dictionary = Dictionary()
         symbols = []
-        for byte in data:
-            byte_data = bytes([byte])
-            symbol = Symbol(byte_data)
-            symbols.append(symbol)
-            if not dictionary.contains_data(byte_data):
+        cache = {} 
+
+        for b in data:
+            if b not in cache:
+                byte_data = bytes([b])
+                symbol = Symbol(byte_data)
+                cache[b] = symbol
                 dictionary.add(symbol)
+            symbols.append(cache[b])
+    
         return symbols, dictionary
 
     def convert_from_symbols(self, symbols):
