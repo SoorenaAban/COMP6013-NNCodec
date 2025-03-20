@@ -26,10 +26,10 @@ class CompressedModel:
             raise ValueError("Preprocessor code is not valid")
         if not isinstance(keras_code, int):
             raise ValueError("Keras code should be of type int")
-        try:
-            keras_model = get_keras_model(keras_code)
-        except ValueError:
-            raise ValueError("Keras code is not valid")
+        # try:
+        #     keras_model = get_keras_model(keras_code)
+        # except ValueError:
+        #     raise ValueError("Keras code is not valid")
         if not isinstance(coder_code, int):
             raise ValueError("Coder code should be of type int")
         try:
@@ -182,7 +182,7 @@ def enable_determinism(seed):
 class TfCodec:
     
     
-    def compress(self, data, preprocessor, keras_model, coder, logger = None):
+    def compress(self, data, preprocessor, keras_model_code, coder, logger = None):
         """
         Compresses the input data.
 
@@ -198,8 +198,8 @@ class TfCodec:
         if not isinstance(preprocessor, BasePreprocessor):
             raise ValueError("Preprocessor should be of type base_preprocessor")
         
-        if not isinstance(keras_model, TFKerasModelBase):
-            raise ValueError("Keras model should be of type KerasModelBase")
+        if not isinstance(keras_model_code, int):
+            raise ValueError("Keras model code should be of type int")
         
         if not isinstance(coder, CoderBase):
             raise ValueError("Coder should be of type base_coder")
@@ -208,9 +208,10 @@ class TfCodec:
         prpr_code = preprocessor.code
         syms, dictionary = preprocessor.convert_to_symbols(data)
         prpr_header = preprocessor.encode_dictionary_for_header(dictionary)
+        keras_model = get_keras_model(keras_model_code, dictionary.get_size())
         predicitor = TfPredictionModel(dictionary, keras_model)
         data = coder.encode(syms, predicitor)
-        compressed_model = CompressedModel(prpr_code, 1, preprocessor.header_size, prpr_header, keras_model.keras_code, coder.get_coder_code(), data)
+        compressed_model = CompressedModel(prpr_code, 1, preprocessor.header_size, prpr_header, keras_model_code, coder.get_coder_code(), data)
         return compressed_model
     
     def decompress(self, compressed_model, logger = None):
@@ -237,7 +238,7 @@ class TfCodec:
         if dictionary is None:
             raise ValueError("Dictionary not supported")
         
-        keras_model = get_keras_model(compressed_model.keras_code)
+        keras_model = get_keras_model(compressed_model.keras_code, dictionary.get_size())
         if keras_model is None:
             raise ValueError("Keras model not supported")
         
@@ -261,11 +262,10 @@ class TfCodecByte(TfCodec):
         Returns:
             CompressedModel: The compressed model
         """
-        keras_model = get_keras_model(keras_model_code)
         coder = get_coder(coder_code)
         
         
-        return super().compress(data, BytePreprocessor(), keras_model, coder, logger)
+        return super().compress(data, BytePreprocessor(), keras_model_code, coder, logger)
 
 class TfCodecByteArithmetic(TfCodecByte):
     def compress(self, data, keras_model_code, used_deep = True, logger = None):

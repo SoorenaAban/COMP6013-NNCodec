@@ -6,12 +6,12 @@ class TestCompressedModel(unittest.TestCase):
     def setUp(self):
         # Create a sample CompressedModel instance for testing.
         self.model = CompressedModel(
-            preprocessor_code=1,
+            preprocessor_code=3,
             version=1,
             preprocessor_header_size=1024,
             preprocessor_header=b'header_data',
             keras_code=2,
-            coder_code=3,
+            coder_code=1,
             data=b'some_binary_data',
             original_file_name='test_file.txt'
         )
