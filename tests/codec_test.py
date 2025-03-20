@@ -1,6 +1,8 @@
 import unittest
 
 from nncodec.codec import *
+from nncodec.coder import *
+from nncodec.preprocessors import *
 
 class TestCompressedModel(unittest.TestCase):
     def setUp(self):
@@ -51,6 +53,53 @@ class TestCompressedModel(unittest.TestCase):
         finally:
             os.remove(temp_file_name)
 
+class TestTfCodec(unittest.TestCase):
+    def test_compress_decompress(self):
+        """Test that compressing and decompressing data preserves the original data."""
+        codec = TfCodec()
+        data = b'Testing Data'
+        preprocessor = BytePreprocessor()
+        coder = ArithmeticCoder(ArithmeticCoderSettings())
+        compressed_data = codec.compress(data, preprocessor, 0, coder)
+        decompressed_data = codec.decompress(compressed_data)
+        
+        self.assertEqual(data, decompressed_data)
+        
+class TestTfCodecFile(unittest.TestCase):
+    def test_compress_decompress(self):
+        """Test that compressing and decompressing data preserves the original data."""
+        codec = TfCodecFile()
+        
+        data = b'Testing Data'
+        
+        #create temporary file name contating the testing data
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file_name = temp_file.name
+            temp_file.write(data)
+        
+        #perform compression
+        
+        compressed_file_name = temp_file_name + '.compressed'
+        preprocessor = BytePreprocessor()
+        coder = ArithmeticCoder(ArithmeticCoderSettings())
+        codec.compress(temp_file_name, compressed_file_name, preprocessor, 0, coder)
+        
+        #perform decompression
+        
+        decompressed_file_name = temp_file_name + '.decompressed'
+        codec.decompress(compressed_file_name, decompressed_file_name)
+        
+        #read the decompressed data
+        with open(decompressed_file_name, 'rb') as decompressed_file:
+            decompressed_data = decompressed_file.read()
+            
+        self.assertEqual(data, decompressed_data)
+        
+        #remove temporary files
+        os.remove(temp_file_name)
+        os.remove(compressed_file_name)
+        os.remove(decompressed_file_name)
+        
 class TestTfCodecByte(unittest.TestCase):
     def test_compress_decompress(self):
         """Test that compressing and decompressing data preserves the original data."""
@@ -70,6 +119,70 @@ class TestTfCodecByteArithmetic(unittest.TestCase):
         decompressed_data = codec.decompress(compressed_data)
         
         self.assertEqual(data, decompressed_data)
+        
+class TestTfCodecByteArithmeticFile(unittest.TestCase):
+    def test_compress_decompress(self):
+        """Test that compressing and decompressing data preserves the original data."""
+        codec = TfCodecByteArithmeticFile()
+        
+        data = b'Testing Data'
+        
+        #create temporary file name contating the testing data
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file_name = temp_file.name
+            temp_file.write(data)
+        
+        #perform compression
+        
+        compressed_file_name = temp_file_name + '.compressed'
+        codec.compress(temp_file_name, compressed_file_name, 0, 1)
+        
+        #perform decompression
+        
+        decompressed_file_name = temp_file_name + '.decompressed'
+        codec.decompress(compressed_file_name, decompressed_file_name)
+        
+        #read the decompressed data
+        with open(decompressed_file_name, 'rb') as decompressed_file:
+            decompressed_data = decompressed_file.read()
+            
+        self.assertEqual(data, decompressed_data)
+        
+        #remove temporary files
+        os.remove(temp_file_name)
+        os.remove(compressed_file_name)
+        os.remove(decompressed_file_name)
+        
+    def test_compress_decompress_deep(self):
+        codec = TfCodecByteArithmeticFile()
+        
+        data = b'Testing Data'
+        
+        #create temporary file name contating the testing data
+        with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            temp_file_name = temp_file.name
+            temp_file.write(data)
+        
+        #perform compression
+        
+        compressed_file_name = temp_file_name + '.compressed'
+        codec.compress(temp_file_name, compressed_file_name, 0, 2)
+        
+        #perform decompression
+        
+        decompressed_file_name = temp_file_name + '.decompressed'
+        codec.decompress(compressed_file_name, decompressed_file_name)
+        
+        #read the decompressed data
+        with open(decompressed_file_name, 'rb') as decompressed_file:
+            decompressed_data = decompressed_file.read()
+            
+        self.assertEqual(data, decompressed_data)
+        
+        #remove temporary files
+        os.remove(temp_file_name)
+        os.remove(compressed_file_name)
+        os.remove(decompressed_file_name)
 
 if __name__ == '__main__':
     unittest.main()

@@ -253,6 +253,56 @@ class TfCodec:
         predictor = TfPredictionModel(dictionary, keras_model)
         syms = coder.decode(compressed_model.data, dictionary, predictor)
         return preprocessor.convert_from_symbols(syms)
+    
+class TfCodecFile(TfCodec):
+    def compress(self, input_path, output_path, preprocessor, keras_model_code, coder, logger = None):
+        """
+        Compresses the input file.
+
+        Args:
+            input_path (str): The path to the input file
+            output_path (str): The path to the output file
+        """
+        if not isinstance(input_path, str):
+            raise ValueError("Input path should be of type str")
+        
+        if not isinstance(output_path, str):
+            raise ValueError("Output path should be of type str")
+        
+        if not os.path.exists(input_path):
+            raise ValueError("Input file does not exist")
+        
+        with open(input_path, 'rb') as f:
+            data = f.read()
+        
+        compressed_model = super().compress(data, preprocessor, keras_model_code, coder, logger)
+        
+        CompressedModelFile.write_to_file(compressed_model, output_path)
+    
+    def decompress(self, compressed_file_path, output_file_path, logger = None):
+        """
+        Decompresses the input file.
+
+        Args:
+            compressed_file_path (str): The path to the compressed file
+            output_file_path (str): The path to the output file
+        """
+        if not isinstance(compressed_file_path, str):
+            raise ValueError("Compressed file path should be of type str")
+        
+        if not isinstance(output_file_path, str):
+            raise ValueError("Output file path should be of type str")
+        
+        if not os.path.exists(compressed_file_path):
+            raise ValueError("Compressed file does not exist")
+        
+        compressed_model = CompressedModelFile.read_from_file(compressed_file_path)
+        
+        data = super().decompress(compressed_model, logger)
+        
+        with open(output_file_path, 'wb') as f:
+            f.write(data)
+        
 
 
 class TfCodecByte(TfCodec):
@@ -270,6 +320,20 @@ class TfCodecByte(TfCodec):
         
         
         return super().compress(data, BytePreprocessor(), keras_model_code, coder, logger)
+    
+class TfCodecByteFile(TfCodecFile):
+    def compress(self, input_path, output_path, keras_model_code, coder_code, logger = None):
+        """
+        Compresses the input file.
+
+        Args:
+            input_path (str): The path to the input file
+            output_path (str): The path to the output file
+        """
+        coder = get_coder(coder_code, logger=logger)
+        
+        super().compress(input_path, output_path, BytePreprocessor(), keras_model_code, coder, logger)
+    
 
 class TfCodecByteArithmetic(TfCodecByte):
     def compress(self, data, keras_model_code, used_deep = True, logger = None):
@@ -282,12 +346,27 @@ class TfCodecByteArithmetic(TfCodecByte):
         Returns:
             CompressedModel: The compressed model
         """
-        
-        coder_settings = ArithmeticCoderSettings()
-        
         if used_deep:
             coder_code = 2
         else:
             coder_code = 1
         
         return super().compress(data, keras_model_code, coder_code, logger)
+    
+    
+class TfCodecByteArithmeticFile(TfCodecByteFile):
+    def compress(self, input_path, output_path, keras_model_code, used_deep = True, logger = None):
+        """
+        Compresses the input file.
+
+        Args:
+            input_path (str): The path to the input file
+            output_path (str): The path to the output file
+        """
+        
+        if used_deep:
+            coder_code = 2
+        else:
+            coder_code = 1
+        
+        super().compress(input_path, output_path, keras_model_code, coder_code, logger)
