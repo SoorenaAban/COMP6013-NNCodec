@@ -10,6 +10,7 @@ from keras import utils
 
 from .models import Symbol, SymbolFrequency, Dictionary
 from .settings import TF_SEED
+from .logger import *
 
 class base_prediction_model(abc.ABC):
     def __init__(self, dictionary):
@@ -94,7 +95,7 @@ class TfPredictionModel(base_prediction_model):
         tf.keras.utils.set_random_seed(seed)
         tf.config.experimental.enable_op_determinism()
 
-    def __init__(self, dictionary, keras_model, model_weights_path=None, use_weighted_average=False):
+    def __init__(self, dictionary, keras_model, model_weights_path=None, use_weighted_average=False, logger=None):
         """
         Initialize TfPredictionModel.
         
@@ -145,6 +146,8 @@ class TfPredictionModel(base_prediction_model):
         
         if model_weights_path is not None:
             self.load_model(model_weights_path)
+            
+        self.logger = logger
 
     @tf.function(jit_compile=True)
     def _predict_raw(self, full_inputs):

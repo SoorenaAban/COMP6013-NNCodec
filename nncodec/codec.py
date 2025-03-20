@@ -13,6 +13,7 @@ from .coder import *
 from .models import *
 from .keras_models import *
 from .settings import *
+from .logger import *
 
 class CompressedModel:
     """To be used to represent the compressed file"""
@@ -178,38 +179,10 @@ def enable_determinism(seed):
         tf.config.experimental.enable_op_determinism()
         mixed_precision.set_global_policy('mixed_float16')
 
-
-class base_codec(abc.ABC):
-    """The base class for the codecs."""
-    @abc.abstractmethod
-    def compress(self, data):
-        """
-        Compresses the input data.
-
-        Args:
-            data (list[bytes]): The list of bytes representing the data
-            
-        Returns:
-            CompressedModel: The compressed model
-        """
-        pass
-    @abc.abstractmethod
-    def decompress(self, compressed_model):
-        """
-        Decompresses encoded data.
-
-        Args:
-            compressed_data (CompressedModel): The compressed model
-            
-        Returns:
-            list[bytes]: The list of bytes representing the decoded data
-        """
-        pass
-
 class TfCodec:
     
     
-    def compress(self, data, preprocessor, keras_model, coder):
+    def compress(self, data, preprocessor, keras_model, coder, logger = None):
         """
         Compresses the input data.
 
@@ -222,7 +195,7 @@ class TfCodec:
         if not isinstance(data, bytes):
             raise ValueError("Data should be in form of bytes")
         
-        if not isinstance(preprocessor, base_preprocessor):
+        if not isinstance(preprocessor, BasePreprocessor):
             raise ValueError("Preprocessor should be of type base_preprocessor")
         
         if not isinstance(keras_model, TFKerasModelBase):
@@ -240,7 +213,7 @@ class TfCodec:
         compressed_model = CompressedModel(prpr_code, 1, preprocessor.header_size, prpr_header, keras_model.keras_code, coder.get_coder_code(), data)
         return compressed_model
     
-    def decompress(self, compressed_model):
+    def decompress(self, compressed_model, logger = None):
         """
         Decompresses encoded data.
 
@@ -278,7 +251,7 @@ class TfCodec:
 
 
 class TfCodecByte(TfCodec):
-    def compress(self, data, keras_model_code, coder_code):
+    def compress(self, data, keras_model_code, coder_code, logger = None):
         """
         Compresses the input data.
 
@@ -292,4 +265,25 @@ class TfCodecByte(TfCodec):
         coder = get_coder(coder_code)
         
         
-        return super().compress(data, BytePreprocessor(), keras_model, coder)
+        return super().compress(data, BytePreprocessor(), keras_model, coder, logger)
+
+class TfCodecByteArithmetic(TfCodecByte):
+    def compress(self, data, keras_model_code, used_deep = True, logger = None):
+        """
+        Compresses the input data.
+
+        Args:
+            data (list[bytes]): The list of bytes representing the data
+            
+        Returns:
+            CompressedModel: The compressed model
+        """
+        
+        coder_settings = ArithmeticCoderSettings()
+        
+        if used_deep:
+            coder = ArithmeticCoderDeep(coder_settings, logger)
+        else:
+            coder = ArithmeticCoder(coder_settings, logger)
+        
+        return super().compress(data, keras_model_code, coder, logger)

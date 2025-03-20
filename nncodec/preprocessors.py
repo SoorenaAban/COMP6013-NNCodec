@@ -4,7 +4,7 @@ import abc
 
 from .models import Symbol, Dictionary
 
-class base_preprocessor(abc.ABC):
+class BasePreprocessor(abc.ABC):
     @property
     @abc.abstractmethod
     def code(self):
@@ -78,7 +78,7 @@ class base_preprocessor(abc.ABC):
         """construct a dictionary of symbols from the header data and based on the preprocessor type"""
         pass
 
-class AsciiCharPreprocessor(base_preprocessor):
+class AsciiCharPreprocessor(BasePreprocessor):
     """ ASCII Char Preprocessor: each ascii character is assigned to a symbol."""
     def __init__(self):
         pass
@@ -159,10 +159,10 @@ class AsciiCharPreprocessor(base_preprocessor):
         return dictionary
         
 
-class BytePreprocessor(base_preprocessor):
+class BytePreprocessor(BasePreprocessor):
     """ Byte Preprocessor: each byte of data is assigned to a symbol. """
-    def __init__(self):
-        pass
+    def __init__(self, logger=None):
+        self.logger = logger
 
     @property
     def header_size(self):

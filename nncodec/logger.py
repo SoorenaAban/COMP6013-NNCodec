@@ -23,6 +23,11 @@ class Log:
     
     def __repr__(self):
         return self.__str__()
+
+class PreprocessingSymbolCreationLog(Log):
+    def __init__(self, symbol):
+        self.symbol = symbol
+        super().__init__("Preprocessing_symbol_creation_log", LogLevel.INFO, f"Symbol: {symbol}")
     
 class CodingLog(Log):
     def __init__(self, symbol_size, encoded_size):

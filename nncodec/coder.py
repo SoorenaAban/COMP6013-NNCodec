@@ -6,6 +6,9 @@ import os
 import tempfile
 import struct
 
+from .models import Symbol
+from .logger import *
+
 class CoderBase(abc.ABC):
     def __init__(self):
         """Initialize the arithmetic coder."""
@@ -291,7 +294,7 @@ class ArithmeticCodec:
         return decoded_symbols
 
 class ArithmeticCoder(CoderBase):
-    def __init__(self, arithmetic_coder_settings):
+    def __init__(self, arithmetic_coder_settings, logger=None):
         if not isinstance(arithmetic_coder_settings, ArithmeticCoderSettings):
             raise ValueError("arithmetic_coder_settings must be an instance of ArithmeticCoderSettings")
         
@@ -299,6 +302,8 @@ class ArithmeticCoder(CoderBase):
         self.codec = ArithmeticCodec(arithmetic_coder_settings)
         
         self.code = 1
+        
+        self.logger = logger
 
     def encode(self, symbols, prediction_model):
         if symbols is None or not isinstance(symbols, list) or len(symbols) == 0:
@@ -337,7 +342,7 @@ class ArithmeticCoder(CoderBase):
         return self.code
 
 class ArithmeticCoderDeep(CoderBase):
-    def __init__(self, coder_settings):
+    def __init__(self, coder_settings, logger=None):
         if not isinstance(coder_settings, ArithmeticCoderSettings):
             raise ValueError("coder_settings must be an instance of ArithmeticCoderSettings")
         self.state_bits = 32
