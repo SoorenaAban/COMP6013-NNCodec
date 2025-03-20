@@ -173,6 +173,7 @@ cython_debug/
 
 #nn-codec specific
 #ignore content experiment_data/enwik
+experiments_data/enwiks/enwik7
 experiments_data/enwiks/enwik8
 experiments_data/enwiks/enwik9
 

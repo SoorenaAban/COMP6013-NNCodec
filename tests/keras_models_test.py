@@ -3,13 +3,9 @@ import numpy as np
 import tensorflow as tf
 
 from nncodec.keras_models import (
-    TFKerasModelBase,
     LstmKerasModel,
-    TFPredictionTestingKerasModel,
-    SimpleGRUModel,
-    StackedGRUModel,
-    BidirectionalGRUModel,
-    DeepResidualGRUModel
+    GruKerasModel,
+    TestingKerasModel
 )
 
 class KerasModelsTest(unittest.TestCase):
@@ -47,31 +43,13 @@ class KerasModelsTest(unittest.TestCase):
         self.check_output(model, output)
 
     def test_TFPredictionTestingKerasModel(self):
-        model = TFPredictionTestingKerasModel(vocab_size=self.vocab_size)
+        model = TestingKerasModel(vocab_size=self.vocab_size)
         dummy_input = self.build_dummy_input(model)
         output = model(dummy_input)
         self.check_output(model, output)
-
-    def test_SimpleGRUModel(self):
-        model = SimpleGRUModel(vocab_size=self.vocab_size)
-        dummy_input = self.build_dummy_input(model)
-        output = model(dummy_input)
-        self.check_output(model, output)
-
-    def test_StackedGRUModel(self):
-        model = StackedGRUModel(vocab_size=self.vocab_size)
-        dummy_input = self.build_dummy_input(model)
-        output = model(dummy_input)
-        self.check_output(model, output)
-
-    def test_BidirectionalGRUModel(self):
-        model = BidirectionalGRUModel(vocab_size=self.vocab_size)
-        dummy_input = self.build_dummy_input(model)
-        output = model(dummy_input)
-        self.check_output(model, output)
-
-    def test_DeepResidualGRUModel(self):
-        model = DeepResidualGRUModel(vocab_size=self.vocab_size)
+        
+    def test_TFPredictionGruKerasModel(self):
+        model = GruKerasModel(vocab_size=self.vocab_size)
         dummy_input = self.build_dummy_input(model)
         output = model(dummy_input)
         self.check_output(model, output)

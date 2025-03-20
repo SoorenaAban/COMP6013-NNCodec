@@ -9,7 +9,7 @@ import tempfile
 
 from nncodec import prediction_models
 from nncodec import models
-from nncodec.keras_models import TFPredictionTestingKerasModel
+from nncodec.keras_models import TestingKerasModel
 
 class TestTFPredictionModel(unittest.TestCase):
     def setUp(self):
@@ -17,7 +17,7 @@ class TestTFPredictionModel(unittest.TestCase):
         symbols = [models.Symbol(b'a'), models.Symbol(b'b'), models.Symbol(b'c'),
                    models.Symbol(b'd'), models.Symbol(b'e')]
         self.dictionary.add_multiple(symbols)
-        test_keras_model = TFPredictionTestingKerasModel(vocab_size=self.dictionary.get_size())
+        test_keras_model = TestingKerasModel(vocab_size=self.dictionary.get_size())
         self.model_obj = prediction_models.TfPredictionModel(self.dictionary, keras_model=test_keras_model)
         self.input_symbols = [models.Symbol(b'a'), models.Symbol(b'b'), models.Symbol(b'c')]
         self.correct_symbol = models.Symbol(b'd')
@@ -89,7 +89,7 @@ class TestTFPredictionModel(unittest.TestCase):
             tmp_path = tmp_file.name
         try:
             self.model_obj.save_model(tmp_path)
-            test_keras_model2 = TFPredictionTestingKerasModel(vocab_size=self.dictionary.get_size())
+            test_keras_model2 = TestingKerasModel(vocab_size=self.dictionary.get_size())
             new_model_obj = prediction_models.TfPredictionModel(self.dictionary, keras_model=test_keras_model2, model_weights_path=tmp_path)
             original_weights = self.model_obj.model.get_weights()
             new_weights = new_model_obj.model.get_weights()

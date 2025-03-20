@@ -5,13 +5,13 @@ import tempfile
 import os
 
 from nncodec import trainers, models
-from nncodec.keras_models import TFPredictionTestingKerasModel
+from nncodec.keras_models import TestingKerasModel
 
 
 class TestTFTrainer(unittest.TestCase):
     def setUp(self):
         self.dictionary = models.Dictionary()
-        self.test_keras_model = TFPredictionTestingKerasModel(4)
+        self.test_keras_model = TestingKerasModel(4)
         symbols = [models.Symbol(b'a'), models.Symbol(b'b'),
                    models.Symbol(b'c'), models.Symbol(b'd')]
         self.dictionary.add_multiple(symbols)
