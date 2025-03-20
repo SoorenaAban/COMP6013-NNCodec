@@ -36,6 +36,10 @@ class base_prediction_model(abc.ABC):
     @abc.abstractmethod
     def load_model(self, path):
         pass
+    
+    @abc.abstractmethod
+    def get_config_code(self):
+        pass
 
 
 class testing_prediction_model(base_prediction_model):
@@ -68,6 +72,9 @@ class testing_prediction_model(base_prediction_model):
 
     def load_model(self, path):
         pass
+    
+    def get_config_code(self):
+        return 0
 
 
 class TfPredictionModel(base_prediction_model):
@@ -260,6 +267,9 @@ class TfPredictionModel(base_prediction_model):
         target_tensor = tf.fill([self.model.batch_size], target_token)
         loss = self._train_step(full_inputs, target_tensor)
         tf.print("Training loss:", loss)
+        
+    def get_config_code(self):
+        return self.model.keras_code
 
     def save_model(self, path):
         if not isinstance(path, str) or len(path.strip()) == 0:

@@ -2,7 +2,7 @@
 
 import abc
 
-from .models import Dictionary, Symbol
+from .models import Symbol, Dictionary
 
 class base_preprocessor(abc.ABC):
     @property
@@ -78,7 +78,7 @@ class base_preprocessor(abc.ABC):
         """construct a dictionary of symbols from the header data and based on the preprocessor type"""
         pass
 
-class ascii_char_preprocessor(base_preprocessor):
+class AsciiCharPreprocessor(base_preprocessor):
     """ ASCII Char Preprocessor: each ascii character is assigned to a symbol."""
     def __init__(self):
         pass
@@ -159,7 +159,7 @@ class ascii_char_preprocessor(base_preprocessor):
         return dictionary
         
 
-class byte_preprocessor(base_preprocessor):
+class BytePreprocessor(base_preprocessor):
     """ Byte Preprocessor: each byte of data is assigned to a symbol. """
     def __init__(self):
         pass
@@ -211,8 +211,8 @@ class byte_preprocessor(base_preprocessor):
 
 def get_preprocessor(code):
     if code == 3:
-        return byte_preprocessor()
+        return BytePreprocessor()
     elif code == 4:
-        return ascii_char_preprocessor()
+        return AsciiCharPreprocessor()
     else:
         raise ValueError("Preprocessor code not supported")

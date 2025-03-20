@@ -15,6 +15,7 @@ class TFKerasModelBase(tf.keras.Model):
     def __init__(self, **kwargs):
         super(TFKerasModelBase, self).__init__(**kwargs)
         self.seed = TF_SEED
+        self.keras_code = -1
 
     def serialize_model(self):
         pass
@@ -46,6 +47,7 @@ class LstmKerasModel(TFKerasModelBase):
         self.rnn_units = 1000
         self.embedding_size = 1024
         self.vocab_size = vocab_size
+        self.keras_code = 1
 
         self.embedding = tf.keras.layers.Embedding(
             input_dim=self.vocab_size,
@@ -127,6 +129,8 @@ class GruKerasModel(TFKerasModelBase):
         self.rnn_units = 1000
         self.embedding_size = 1024
         self.vocab_size = vocab_size
+        
+        self.keras_code = 2
 
         self.embedding = tf.keras.layers.Embedding(
             input_dim=self.vocab_size,
@@ -206,6 +210,7 @@ class GruKerasModel(TFKerasModelBase):
 class TFPredictionTestingKerasModel(TFKerasModelBase):
     def __init__(self, vocab_size, **kwargs):
         super(TFPredictionTestingKerasModel, self).__init__(**kwargs)
+        self.keras_code = 0
         self.vocab_size = vocab_size
         self.batch_size = 1
         self.seq_length = 5
@@ -423,3 +428,13 @@ class DeepResidualGRUModel(TFKerasModelBase):
     
     def get_dummy_states(self):
         return []
+    
+def get_keras_model(code, vocab_size):
+    if code == 0:
+        return TFPredictionTestingKerasModel(vocab_size)
+    elif code == 1:
+        return LstmKerasModel(vocab_size)
+    elif code == 2:
+        return GruKerasModel(vocab_size)
+    else:
+        raise ValueError(f"Unsupported Keras model code: {code}")

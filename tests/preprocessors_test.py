@@ -2,18 +2,18 @@
 
 import unittest
 
-from nncodec import preprocessors
-from nncodec import models
+from nncodec.preprocessors import *
+from nncodec.models import *
 
 class TestBytePreprocessor(unittest.TestCase):
     def setUp(self):
-        self.preprocessor = preprocessors.byte_preprocessor()
+        self.preprocessor = BytePreprocessor()
         self.data = b"Test Data"
         self.symbols, self.dictionary = self.preprocessor.convert_to_symbols(self.data)
 
     def test_convert_to_symbols(self):
         self.assertIsInstance(self.symbols, list)
-        self.assertIsInstance(self.dictionary, models.Dictionary)
+        self.assertIsInstance(self.dictionary, Dictionary)
         self.assertEqual(len(self.symbols), len(self.data))
         self.assertEqual(self.dictionary.get_size(), len(set(self.data)))
 
@@ -28,7 +28,7 @@ class TestBytePreprocessor(unittest.TestCase):
 
     def test_construct_dictionary_from_symbols(self):
         dictionary = self.preprocessor.construct_dictionary_from_symbols(self.symbols)
-        self.assertIsInstance(dictionary, models.Dictionary)
+        self.assertIsInstance(dictionary, Dictionary)
         self.assertEqual(dictionary.get_size(), len(set(self.data)))
 
     def test_encode_dictionary_for_header(self):
@@ -58,7 +58,7 @@ class TestBytePreprocessor(unittest.TestCase):
 
 class TestAsciiCharPreprocessor(unittest.TestCase):
     def setUp(self):
-        self.preprocessor = preprocessors.ascii_char_preprocessor()
+        self.preprocessor = AsciiCharPreprocessor()
 
     def test_convert_to_symbols_lowercase(self):
         data = b"hello"

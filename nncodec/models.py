@@ -17,6 +17,12 @@ class Symbol:
             return self.data == other.data
         return False
     
+    def __str__(self):
+        try :
+            return str(self.data)
+        except:
+            return f"[Symbol:{self.__hash__()}]"
+    
     def __repr__(self):
         return str(self.data)
 
@@ -68,67 +74,3 @@ class Dictionary:
             if symbol.code == code:
                 return True
         return False
-
-class CompressedModel:
-    """To be used to represent the compressed file"""
-    def __init__(self):
-        self.preprocessor_code = None # 2 bytes
-        self.version = None # 2 bytes
-        self.preprocessor_header = None
-        self.data = None
-        pass
-
-class LogType(Enum):
-    INFO = 1
-    WARNING = 2
-    ERROR = 3
-    
-class ModuleStage(Enum):
-    COMPRESSION = 1
-    DECOMPRESSION = 2
-    
-class LogProgress:
-    """"""
-    def __init__(self, step, stage, total_steps = None):
-        if(not isinstance(step, int)):
-            raise ValueError("Step should be of type int")
-        if(not isinstance(stage, ModuleStage)):
-            raise ValueError("Stage should be of type ModuleStage")
-        if(total_steps is not None and not isinstance(total_steps, int)):
-            raise ValueError("Total steps should be of type int")
-        
-        self.step = step
-        self.stage = stage
-        self.total_steps = total_steps
-        self.timestamp = time.time()
-        pass
-
-class LogMessage:
-    """To be used to log the compression and decompression process"""
-    def __init__(self, log_type, message, progress, tags=[]):
-        if not isinstance(log_type, LogType):
-            raise ValueError("Log type should be of type LogType")
-        if not isinstance(message, str):
-            raise ValueError("Message should be of type string")
-        if not isinstance(progress, LogProgress):
-            raise ValueError("Progress should be of type LogProgress")
-        if (not isinstance(tags, list) or not all(isinstance(tag, str) for tag in tags)):
-            if isinstance(tags, str):
-                self.tags = []
-                for tag in tags.split(","):
-                    self.tags.append(tag.strip())
-            else:
-                raise ValueError("Tags should be of type list of strings")
-            raise ValueError("Tags should be of type list of strings")
-        else:
-            self.tags = tags
-        self.timestamp = time.time()
-        self.log_type = log_type
-        self.messasge = message
-        self.progress = progress
-
-    def __str__(self):
-        return f"[{self.log_type}]({self.progress}):{self.messasge} | {self.tags}"
-
-    def __repr__(self):
-        return f"[{self.log_type}]({self.progress}):{self.messasge} | {self.tags}"

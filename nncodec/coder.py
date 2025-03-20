@@ -39,6 +39,13 @@ class CoderBase(abc.ABC):
             list[Symbol]: The decoded list of symbols.
         """
         pass
+    
+    @abc.abstractmethod
+    def get_coder_code(self):
+        """
+        Returns the code for the coder. 
+        """
+        pass
 
 class ArithmeticCoderSettings:
     def __init__(self, scaling_factor=10000000, offset=1):
@@ -290,6 +297,8 @@ class ArithmeticCoder(CoderBase):
         
         self.state_bits = 32
         self.codec = ArithmeticCodec(arithmetic_coder_settings)
+        
+        self.code = 1
 
     def encode(self, symbols, prediction_model):
         if symbols is None or not isinstance(symbols, list) or len(symbols) == 0:
@@ -323,6 +332,9 @@ class ArithmeticCoder(CoderBase):
             train_callback=lambda ctx, sym: prediction_model.train(ctx, sym)
         )
         return decoded_symbols
+    
+    def get_coder_code(self):
+        return self.code
 
 class ArithmeticCoderDeep(CoderBase):
     def __init__(self, coder_settings):
@@ -330,6 +342,8 @@ class ArithmeticCoderDeep(CoderBase):
             raise ValueError("coder_settings must be an instance of ArithmeticCoderSettings")
         self.state_bits = 32
         self.codec = ArithmeticCodec(coder_settings)
+        
+        self.code = 2
 
     def encode(self, input_symbols, prediction_model):
         if not isinstance(input_symbols, list):
@@ -406,3 +420,15 @@ class ArithmeticCoderDeep(CoderBase):
             train_callback=None
         )
         return decoded_symbols
+    
+    def get_coder_code(self):
+        self.code = 2
+        
+        
+def get_coder(code):
+    if code == 1:
+        return ArithmeticCoder(ArithmeticCoderSettings())
+    elif code == 2:
+        return ArithmeticCoderDeep(ArithmeticCoderSettings())
+    else:
+        raise ValueError("Unknown coder code: " + str(code))
