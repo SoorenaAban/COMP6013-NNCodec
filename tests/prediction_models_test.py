@@ -24,7 +24,7 @@ class TestTFPredictionModel(unittest.TestCase):
 
     def test_symbols_to_tokens(self):
         tokens = self.model_obj._symbols_to_tokens(self.input_symbols, self.dictionary)
-        self.assertEqual(tokens, [1, 2, 3])
+        self.assertEqual(tokens, [0, 1, 2])
 
 
     def test_preprocess_input(self):

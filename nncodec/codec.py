@@ -204,6 +204,8 @@ class TfCodec:
         if not isinstance(coder, CoderBase):
             raise ValueError("Coder should be of type base_coder")
         
+        enable_determinism(42)
+        
         
         prpr_code = preprocessor.code
         syms, dictionary = preprocessor.convert_to_symbols(data)
@@ -211,7 +213,7 @@ class TfCodec:
         keras_model = get_keras_model(keras_model_code, dictionary.get_size())
         predicitor = TfPredictionModel(dictionary, keras_model)
         data = coder.encode(syms, predicitor)
-        compressed_model = CompressedModel(prpr_code, 1, preprocessor.header_size, prpr_header, keras_model_code, coder.get_coder_code(), data)
+        compressed_model = CompressedModel(prpr_code, 1, preprocessor.header_size, prpr_header, keras_model_code, coder.coder_code, data)
         return compressed_model
     
     def decompress(self, compressed_model, logger = None):
@@ -245,6 +247,8 @@ class TfCodec:
         coder = get_coder(compressed_model.coder_code)
         if coder is None:
             raise ValueError("Coder not supported")
+        
+        enable_determinism(42)
         
         predictor = TfPredictionModel(dictionary, keras_model)
         syms = coder.decode(compressed_model.data, dictionary, predictor)
@@ -282,8 +286,8 @@ class TfCodecByteArithmetic(TfCodecByte):
         coder_settings = ArithmeticCoderSettings()
         
         if used_deep:
-            coder = ArithmeticCoderDeep(coder_settings, logger)
+            coder_code = 2
         else:
-            coder = ArithmeticCoder(coder_settings, logger)
+            coder_code = 1
         
-        return super().compress(data, keras_model_code, coder, logger)
+        return super().compress(data, keras_model_code, coder_code, logger)

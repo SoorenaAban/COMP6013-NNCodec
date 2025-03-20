@@ -215,7 +215,7 @@ class TFPredictionTestingKerasModel(TFKerasModelBase):
         self.batch_size = 1
         self.seq_length = 5
         self.embedding = tf.keras.layers.Embedding(
-            input_dim=self.vocab_size + 1,
+            input_dim=self.vocab_size,
             output_dim=64,
             embeddings_initializer=tf.keras.initializers.RandomUniform(seed=self.seed),
             name="embedding"

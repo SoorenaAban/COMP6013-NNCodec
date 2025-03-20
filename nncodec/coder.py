@@ -301,7 +301,7 @@ class ArithmeticCoder(CoderBase):
         self.state_bits = 32
         self.codec = ArithmeticCodec(arithmetic_coder_settings)
         
-        self.code = 1
+        self.coder_code = 1
         
         self.logger = logger
 
@@ -339,7 +339,7 @@ class ArithmeticCoder(CoderBase):
         return decoded_symbols
     
     def get_coder_code(self):
-        return self.code
+        return self.coder_code
 
 class ArithmeticCoderDeep(CoderBase):
     def __init__(self, coder_settings, logger=None):
@@ -348,7 +348,7 @@ class ArithmeticCoderDeep(CoderBase):
         self.state_bits = 32
         self.codec = ArithmeticCodec(coder_settings)
         
-        self.code = 2
+        self.coder_code = 2
 
     def encode(self, input_symbols, prediction_model):
         if not isinstance(input_symbols, list):
@@ -427,7 +427,7 @@ class ArithmeticCoderDeep(CoderBase):
         return decoded_symbols
     
     def get_coder_code(self):
-        self.code = 2
+        self.coder_code = 2
         
         
 def get_coder(code):

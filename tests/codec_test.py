@@ -60,6 +60,16 @@ class TestTfCodecByte(unittest.TestCase):
         decompressed_data = codec.decompress(compressed_data)
         
         self.assertEqual(data, decompressed_data)
+        
+class TestTfCodecByteArithmetic(unittest.TestCase):
+    def test_compress_decompress(self):
+        """Test that compressing and decompressing data preserves the original data."""
+        codec = TfCodecByteArithmetic()
+        data = b'Testing Data'
+        compressed_data = codec.compress(data, 0, 2)
+        decompressed_data = codec.decompress(compressed_data)
+        
+        self.assertEqual(data, decompressed_data)
 
 if __name__ == '__main__':
     unittest.main()

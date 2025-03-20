@@ -95,7 +95,7 @@ class TfPredictionModel(base_prediction_model):
         tf.keras.utils.set_random_seed(seed)
         tf.config.experimental.enable_op_determinism()
 
-    def __init__(self, dictionary, keras_model, model_weights_path=None, use_weighted_average=False, logger=None):
+    def __init__(self, dictionary, keras_model, model_weights_path=None, use_weighted_average=False, logger=None, freeze_training=False):
         """
         Initialize TfPredictionModel.
         
@@ -106,6 +106,8 @@ class TfPredictionModel(base_prediction_model):
             use_weighted_average (bool, optional): Flag indicating whether to combine predictions
                 from multiple windows using a weighted average (True) or use only the last window (False).
                 Default is False.
+            freeze_training (bool, optional): When True, disables training updates to ensure that
+                the probability distribution remains consistent for arithmetic coding.
         """
         if dictionary is None or not isinstance(dictionary, Dictionary):
             raise ValueError("dictionary must be a Dictionary instance and cannot be None")
@@ -126,11 +128,13 @@ class TfPredictionModel(base_prediction_model):
         self.dictionary = dictionary
         mixed_precision.set_global_policy('mixed_float16')
         
+        # Sort symbols for a consistent ordering.
         self._sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
-        # Reserve 0 for padding; valid tokens start at 1.
-        self._token_map = {symbol.data: idx + 1 for idx, symbol in enumerate(self._sorted_symbols)}
+        # Build token map with zero-based indexing (no reserved padding token).
+        self._token_map = {symbol.data: idx for idx, symbol in enumerate(self._sorted_symbols)}
         
         self.model = keras_model
+        # Make sure the Keras model's embedding layer is updated to use input_dim = vocab_size.
         self.model.compile(
             optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
             loss='sparse_categorical_crossentropy'
@@ -143,6 +147,7 @@ class TfPredictionModel(base_prediction_model):
         _ = self.model(dummy_inputs)
         
         self.use_weighted_average = use_weighted_average
+        self.freeze_training = freeze_training
         
         if model_weights_path is not None:
             self.load_model(model_weights_path)
@@ -155,9 +160,7 @@ class TfPredictionModel(base_prediction_model):
 
     def _symbols_to_tokens(self, symbols, dictionary):
         """
-        Convert a list of Symbol objects to tokens.
-        
-        Now tokens for valid symbols start at 1, with 0 reserved for padding.
+        Convert a list of Symbol objects to tokens using zero-based indexing.
         """
         if not isinstance(symbols, list):
             raise ValueError("symbols must be a list of Symbol objects")
@@ -178,15 +181,9 @@ class TfPredictionModel(base_prediction_model):
         Convert a list of Symbol objects into a padded tensor using the model's
         seq_length and batch_size.
         
-        Current approach:
-         - Convert symbols to tokens (valid tokens start at 1; 0 is reserved for padding).
-         - If the total number of tokens exceeds batch_size * seq_length,
-           discard tokens from the beginning so that only the last batch_size*seq_length tokens are used.
-         - If there are fewer tokens than required, pad with 0s on the left.
-         - Reshape the resulting tokens into a tensor of shape (batch_size, seq_length).
-         
-        TODO: Consider alternative approaches such as generating overlapping windows.
-              Also, consider reserving a dedicated token (e.g., 0) exclusively for padding if needed.
+        - Convert symbols to tokens (using zero-based indexing).
+        - If there are fewer tokens than required, pad with 0s on the left.
+        - Reshape into a tensor of shape (batch_size, seq_length).
         """
         tokens = self._symbols_to_tokens(symbols, self.dictionary)
         total_required = self.model.batch_size * self.model.seq_length
@@ -223,14 +220,7 @@ class TfPredictionModel(base_prediction_model):
     def predict(self, symbols):
         """
         Predict the next symbol(s) given a list of input symbols.
-        
-        The input symbols are first split into non-overlapping windows.
-        If there are more tokens than required, tokens from the beginning are discarded
-        so that only the most recent tokens are used.
-        
-        By default, the prediction is generated using only the last window.
-        If self.use_weighted_average is True, predictions from all windows are combined
-        using a linear weighted average (with later windows given higher weight).
+        Uses only the last window by default, or a weighted average if specified.
         """
         if symbols is None or not isinstance(symbols, list):
             raise ValueError("symbols must be a list of Symbol objects")
@@ -259,6 +249,12 @@ class TfPredictionModel(base_prediction_model):
         return loss
 
     def train(self, previous_symbols, correct_symbol):
+        """
+        Train the model on the given symbol.
+        If freeze_training is True, the training update is skipped.
+        """
+        if self.freeze_training:
+            return
         if previous_symbols is None or not isinstance(previous_symbols, list):
             raise ValueError("previous_symbols must be a list of Symbol objects")
         if not isinstance(correct_symbol, Symbol):
@@ -266,7 +262,8 @@ class TfPredictionModel(base_prediction_model):
         main_input_tensor = self._preprocess_input(previous_symbols)
         full_inputs = [main_input_tensor] + self.dummy_states
         target_tokens = self._symbols_to_tokens([correct_symbol], self.dictionary)
-        target_token = target_tokens[0] - 1 
+        # Use the token directly as target (zero-based)
+        target_token = target_tokens[0]
         target_tensor = tf.fill([self.model.batch_size], target_token)
         loss = self._train_step(full_inputs, target_tensor)
         tf.print("Training loss:", loss)
