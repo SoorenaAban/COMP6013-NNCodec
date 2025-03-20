@@ -61,9 +61,10 @@ class ArithmeticCodec:
     This class consolidates common code such as probability conversion functions and 
     bitstream packing/unpacking functions, as well as the integer-based arithmetic encoding/decoding loops.
     """
-    def __init__(self, settings: ArithmeticCoderSettings):
+    def __init__(self, settings: ArithmeticCoderSettings, logger=None):
         self.scaling_factor = settings.scaling_factor
         self.offset = settings.offset
+        self.logger = logger
 
     def probabilities_to_code(self, probs):
         """
@@ -183,7 +184,10 @@ class ArithmeticCodec:
         context = []
 
         for symbol in symbols:
+            bits_before = len(output_bits)  # for logging
             probs = prediction_model.predict(context)
+            
+            
             cum_freq = self.probabilities_to_code(probs)
             total = cum_freq[-1]
 
@@ -198,6 +202,10 @@ class ArithmeticCodec:
                         break
                 if symbol_index is None:
                     raise ValueError("Symbol not found in dictionary")
+                
+            
+            if self.logger is not None:
+                self.logger.log(EncodedSymbolProbability(symbol, probs[symbol_index].frequency.item()))
             
             sym_low = cum_freq[symbol_index - 1] if symbol_index > 0 else 0
             sym_high = cum_freq[symbol_index]
@@ -216,6 +224,12 @@ class ArithmeticCodec:
             if train_callback is not None:
                 train_callback(context, symbol)
             context.append(symbol)
+            
+            bits_after = len(output_bits)  # for logging
+            encoded_bits = bits_after - bits_before # for logging
+            symbol_size = len(symbol.data) * 8 # for logging
+            if self.logger is not None:
+                self.logger.log(CodingLog(symbol_size, encoded_bits))
 
         for _ in range(state_bits):
             bit = low >> (state_bits - 1)
@@ -252,6 +266,7 @@ class ArithmeticCodec:
         context = []
         for _ in range(num_symbols):
             probs = prediction_model.predict(context)
+            
             cum_freq = self.probabilities_to_code(probs)
             total = cum_freq[-1]
             current_range = high - low + 1
@@ -299,7 +314,7 @@ class ArithmeticCoder(CoderBase):
             raise ValueError("arithmetic_coder_settings must be an instance of ArithmeticCoderSettings")
         
         self.state_bits = 32
-        self.codec = ArithmeticCodec(arithmetic_coder_settings)
+        self.codec = ArithmeticCodec(arithmetic_coder_settings, logger)
         
         self.coder_code = 1
         
@@ -346,7 +361,7 @@ class ArithmeticCoderDeep(CoderBase):
         if not isinstance(coder_settings, ArithmeticCoderSettings):
             raise ValueError("coder_settings must be an instance of ArithmeticCoderSettings")
         self.state_bits = 32
-        self.codec = ArithmeticCodec(coder_settings)
+        self.codec = ArithmeticCodec(coder_settings, logger)
         
         self.coder_code = 2
 
@@ -430,10 +445,10 @@ class ArithmeticCoderDeep(CoderBase):
         self.coder_code = 2
         
         
-def get_coder(code):
+def get_coder(code, logger=None):
     if code == 1:
-        return ArithmeticCoder(ArithmeticCoderSettings())
+        return ArithmeticCoder(ArithmeticCoderSettings(), logger)
     elif code == 2:
-        return ArithmeticCoderDeep(ArithmeticCoderSettings())
+        return ArithmeticCoderDeep(ArithmeticCoderSettings(), logger=logger)
     else:
         raise ValueError("Unknown coder code: " + str(code))

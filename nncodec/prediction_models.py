@@ -266,7 +266,9 @@ class TfPredictionModel(base_prediction_model):
         target_token = target_tokens[0]
         target_tensor = tf.fill([self.model.batch_size], target_token)
         loss = self._train_step(full_inputs, target_tensor)
-        tf.print("Training loss:", loss)
+        loss_value = loss.numpy() if hasattr(loss, 'numpy') else loss # for logging
+        if self.logger is not None:
+            self.logger.log(PredictionModelTrainingLog(loss_value))
         
     def get_config_code(self):
         return self.model.keras_code

@@ -37,11 +37,11 @@ class CodingLog(Log):
         
         super().__init__("Coding_log", LogLevel.INFO, f"Symbol size: {symbol_size}, Encoded size: {encoded_size}")
         
-class PredictionModelProabilityLog(Log):
+class EncodedSymbolProbability(Log):
     def __init__(self, symbol, prob):
         self.symbol = symbol
         self.prob = prob
-        super().__init__("Prediction_model_log", LogLevel.INFO, f"Symbol: {symbol}, Probability: {prob}")
+        super().__init__("EncodedSymbolProbability", LogLevel.INFO, f"Symbol: {symbol}, Probability: {prob}")
         
 class PredictionModelTrainingLog(Log):
     def __init__(self, loss):

@@ -211,7 +211,7 @@ class TfCodec:
         syms, dictionary = preprocessor.convert_to_symbols(data)
         prpr_header = preprocessor.encode_dictionary_for_header(dictionary)
         keras_model = get_keras_model(keras_model_code, dictionary.get_size())
-        predicitor = TfPredictionModel(dictionary, keras_model)
+        predicitor = TfPredictionModel(dictionary, keras_model, logger= logger)
         data = coder.encode(syms, predicitor)
         compressed_model = CompressedModel(prpr_code, 1, preprocessor.header_size, prpr_header, keras_model_code, coder.coder_code, data)
         return compressed_model
@@ -244,7 +244,7 @@ class TfCodec:
         if keras_model is None:
             raise ValueError("Keras model not supported")
         
-        coder = get_coder(compressed_model.coder_code)
+        coder = get_coder(compressed_model.coder_code, logger=logger)
         if coder is None:
             raise ValueError("Coder not supported")
         
@@ -266,7 +266,7 @@ class TfCodecByte(TfCodec):
         Returns:
             CompressedModel: The compressed model
         """
-        coder = get_coder(coder_code)
+        coder = get_coder(coder_code, logger=logger)
         
         
         return super().compress(data, BytePreprocessor(), keras_model_code, coder, logger)

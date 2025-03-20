@@ -1,7 +1,7 @@
 import time
 
-from nncodec import codec
-
+from nncodec.codec import *
+from nncodec.logger import *
 
 lorem_ipsum_1par = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a consectetur ligula. Nunc erat dolor, tristique sed sagittis quis, dignissim eget erat. Vivamus enim lorem, finibus sit amet maximus eget, condimentum sit amet massa. Fusce aliquet velit sit amet ex pretium, ut tincidunt dolor semper. Nulla pellentesque eget massa quis rhoncus. Curabitur maximus quis mauris vel sollicitudin. Integer tristique ut nisl sed consequat. Donec a ipsum ut sem cursus ullamcorper. Sed finibus, sapien id volutpat tempus, turpis odio placerat purus, sit amet scelerisque nibh sem a magna. Sed justo sem, facilisis at imperdiet eu, tincidunt vel quam. Ut id sollicitudin eros, sit amet bibendum tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit."
 
@@ -20,25 +20,13 @@ Pellentesque faucibus nisl ipsum, ut porta risus pharetra placerat. Praesent a m
 def main():
     print(lorem_ipsum_5par)
     
-    lorem_ipsum_bytes = str.encode(lorem_ipsum_5par)
+    lorem_ipsum_bytes = str.encode(lorem_ipsum_1par)
     print(f"Sized of original data: {len(lorem_ipsum_bytes)}")
     
-    byte_codec = codec.byte_codec()
-    
-    encoding_time_start = time.time()
-    encoded_data = byte_codec.compress(lorem_ipsum_bytes)
-    encoding_time_end = time.time()
-    print(f"Sized of encoded data: {len(encoded_data.data)}")
-    print(f"Encoding time: {encoding_time_end - encoding_time_start} seconds")
-    
-    decoding_time_start = time.time()
-    decoded_data = byte_codec.decompress(encoded_data)
-    decoded_string = decoded_data.decode("utf-8")
-    print(f"Decoded data: {decoded_string}")
-    decoding_time_end = time.time()
-    print(f"Decoding time: {decoding_time_end - decoding_time_start} seconds")
-    
-    print(f"Compression ratio: {len(encoded_data.data) / len(lorem_ipsum_bytes)}")
+    bCodec = TfCodecByteArithmetic()
+    logger = Logger()
+    compressed_data = CompressedModel.serialize(bCodec.compress(lorem_ipsum_bytes, 0, logger=logger))
+    print(f"Size of compressed data: {len(compressed_data)}")
     
 if __name__ == "__main__":
     main()
