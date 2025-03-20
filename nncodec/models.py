@@ -4,6 +4,9 @@ import uuid
 import time
 from enum import Enum
 
+class CompressionResult:
+    def __init__(self, success, compressed_data_size, compression_ratio, compression_time, decompression_time):
+        self.compression_decompression_success = False
 
 class Symbol:
     """ Symbol class represents a single symbol in the data"""

@@ -2,6 +2,7 @@ import time
 
 from nncodec.codec import *
 from nncodec.logger import *
+from nncodec.performence_display import *
 
 lorem_ipsum_1par = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec a consectetur ligula. Nunc erat dolor, tristique sed sagittis quis, dignissim eget erat. Vivamus enim lorem, finibus sit amet maximus eget, condimentum sit amet massa. Fusce aliquet velit sit amet ex pretium, ut tincidunt dolor semper. Nulla pellentesque eget massa quis rhoncus. Curabitur maximus quis mauris vel sollicitudin. Integer tristique ut nisl sed consequat. Donec a ipsum ut sem cursus ullamcorper. Sed finibus, sapien id volutpat tempus, turpis odio placerat purus, sit amet scelerisque nibh sem a magna. Sed justo sem, facilisis at imperdiet eu, tincidunt vel quam. Ut id sollicitudin eros, sit amet bibendum tortor. Lorem ipsum dolor sit amet, consectetur adipiscing elit."
 
@@ -25,8 +26,21 @@ def main():
     
     bCodec = TfCodecByteArithmetic()
     logger = Logger()
+    logger.display_info = False
     compressed_data = CompressedModel.serialize(bCodec.compress(lorem_ipsum_bytes, 0, logger=logger))
     print(f"Size of compressed data: {len(compressed_data)}")
+    decompressed_data = bCodec.decompress(CompressedModel.deserialize(compressed_data), logger=logger)
+    print(f"Size of decompressed data: {len(decompressed_data)}")
+    
+    if lorem_ipsum_bytes == decompressed_data:
+        print("Data integrity preserved.")
+    else:
+        print("Data integrity compromised.")
+        
+    pm = PerformanceDisplay(logger.logs)
+    pm.plot_coding_log()
+    pm.plot_prediction_model_training_log()
+    pm.plot_encoded_symbol_probability()
     
 if __name__ == "__main__":
     main()
