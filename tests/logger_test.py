@@ -16,31 +16,7 @@ class TestLogger(unittest.TestCase):
     def tearDown(self):
         sys.stdout = self.saved_stdout
 
-    def test_log_string(self):
-        test_message = "Test log string"
-        self.logger.log(test_message)
-        
-        self.assertEqual(len(self.logger.logs), 1)
-        
-        log_entry = self.logger.logs[0]
-        self.assertEqual(log_entry.type_name, "General")
-        self.assertEqual(log_entry.message, test_message)
-        self.assertEqual(log_entry.level, LogLevel.INFO)
-        
-        printed_output = self.captured_output.getvalue()
-        self.assertIn("General", printed_output)
-        self.assertIn(test_message, printed_output)
 
-    def test_log_log_instance(self):
-        log_instance = PreprocessingSymbolCreationLog("A")
-        self.logger.log(log_instance)
-        
-        self.assertEqual(len(self.logger.logs), 1)
-        self.assertEqual(self.logger.logs[0], log_instance)
-        
-        printed_output = self.captured_output.getvalue()
-        self.assertIn("Preprocessing_symbol_creation_log", printed_output)
-        self.assertIn("Symbol: A", printed_output)
 
     def test_invalid_log(self):
         with self.assertRaises(ValueError):

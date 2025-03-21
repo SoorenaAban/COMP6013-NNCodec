@@ -3,6 +3,7 @@
 import abc
 
 from .models import Symbol, Dictionary
+from .logger import Logger, PreprocessingProgressStep
 
 class BasePreprocessor(abc.ABC):
     @property
@@ -80,7 +81,8 @@ class BasePreprocessor(abc.ABC):
 
 class AsciiCharPreprocessor(BasePreprocessor):
     """ ASCII Char Preprocessor: each ascii character is assigned to a symbol."""
-    def __init__(self):
+    def __init__(self, logger=None):
+        self.logger = logger
         pass
     
     @property
@@ -115,6 +117,7 @@ class AsciiCharPreprocessor(BasePreprocessor):
                 symbols.append(Symbol(bytes([byte])))
                 if not dictionary.contains_data(bytes([byte])):
                     dictionary.add(Symbol(bytes([byte])))
+            
         
         if not dictionary.contains_data(uppercase_flag_symbol.data):
             dictionary.add(uppercase_flag_symbol)
@@ -187,6 +190,8 @@ class BytePreprocessor(BasePreprocessor):
                 cache[b] = symbol
                 dictionary.add(symbol)
             symbols.append(cache[b])
+            if (self.logger is not None):
+                self.logger.log(PreprocessingProgressStep(f"Converting data to symbols", len(data)))
     
         return symbols, dictionary
 
@@ -213,10 +218,10 @@ class BytePreprocessor(BasePreprocessor):
                 dictionary.add(Symbol(i.to_bytes(1, 'big')))
         return dictionary
 
-def get_preprocessor(code):
+def get_preprocessor(code, logger=None):
     if code == 3:
-        return BytePreprocessor()
+        return BytePreprocessor(logger)
     elif code == 4:
-        return AsciiCharPreprocessor()
+        return AsciiCharPreprocessor(logger)
     else:
         raise ValueError("Preprocessor code not supported")

@@ -230,6 +230,10 @@ class ArithmeticCodec:
             symbol_size = len(symbol.data) * 8 # for logging
             if self.logger is not None:
                 self.logger.log(CodingLog(symbol_size, encoded_bits))
+                self.logger.log(CodingProgressStep(len(output_bits), len(symbols)))
+                self.logger.log(PredictionModelTrainingLog(prediction_model.train(context, symbol)))
+                self.logger.log(PredictionModelTrainingProgressStep(len(context), len(symbols)))
+            
 
         for _ in range(state_bits):
             bit = low >> (state_bits - 1)
@@ -362,6 +366,7 @@ class ArithmeticCoderDeep(CoderBase):
             raise ValueError("coder_settings must be an instance of ArithmeticCoderSettings")
         self.state_bits = 32
         self.codec = ArithmeticCodec(coder_settings, logger)
+        self.logger = logger
         
         self.coder_code = 2
 
@@ -378,6 +383,8 @@ class ArithmeticCoderDeep(CoderBase):
         for i, symbol in enumerate(input_symbols):
             context = input_symbols[:i]
             prediction_model.train(context, symbol)
+            if self.logger is not None:
+                self.logger.log(PredictionModelTrainingProgressStep(i, len(input_symbols)))
         
         temp_dir = tempfile.gettempdir()
         temp_filename = next(tempfile._get_candidate_names()) + ".weights.h5"

@@ -332,7 +332,7 @@ class TfCodecByteFile(TfCodecFile):
         """
         coder = get_coder(coder_code, logger=logger)
         
-        super().compress(input_path, output_path, BytePreprocessor(), keras_model_code, coder, logger)
+        super().compress(input_path, output_path, BytePreprocessor(logger), keras_model_code, coder, logger)
     
 
 class TfCodecByteArithmetic(TfCodecByte):

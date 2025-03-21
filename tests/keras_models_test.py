@@ -5,6 +5,7 @@ import tensorflow as tf
 from nncodec.keras_models import (
     LstmKerasModel,
     GruKerasModel,
+    LstmKerasModelLight,
     TestingKerasModel
 )
 
@@ -50,6 +51,12 @@ class KerasModelsTest(unittest.TestCase):
         
     def test_TFPredictionGruKerasModel(self):
         model = GruKerasModel(vocab_size=self.vocab_size)
+        dummy_input = self.build_dummy_input(model)
+        output = model(dummy_input)
+        self.check_output(model, output)
+        
+    def test_TFpredictionLstmKerasModelLight(self):
+        model = LstmKerasModelLight(vocab_size=self.vocab_size)
         dummy_input = self.build_dummy_input(model)
         output = model(dummy_input)
         self.check_output(model, output)
