@@ -24,7 +24,8 @@ class TfByteArithmeticExperiment:
         self.compressed_file_path = os.path.join(self.experiment_folder_path, f"{input_file_name}.nncodec")
         self.decompressed_file_path = os.path.join(self.experiment_folder_path, f"{input_file_name}_decompressed")
         
-        self.logger = Logger()
+        self.compression_logger = Logger()
+        self.decompression_logger = Logger()
         self.codec = TfCodecByteArithmeticFile()
         self.keras_model_code = keras_model_code
         self.use_deep_learning = use_deep_learning
@@ -34,11 +35,11 @@ class TfByteArithmeticExperiment:
         self.input_file_size = os.path.getsize(self.input_file_path)
         
         self.compression_start_time = time.time()
-        self.codec.compress(self.input_file_path, self.compressed_file_path, self.keras_model_code, self.use_deep_learning, self.logger)
+        self.codec.compress(self.input_file_path, self.compressed_file_path, self.keras_model_code, self.use_deep_learning, self.compression_logger)
         self.compression_end_time = time.time()
         
         self.decompression_start_time = time.time()
-        self.codec.decompress(self.compressed_file_path, self.decompressed_file_path, self.logger)
+        self.codec.decompress(self.compressed_file_path, self.decompressed_file_path, self.decompression_logger)
         self.decompression_end_time = time.time()
         
         self.compressed_file_size = os.path.getsize(self.compressed_file_path)
@@ -65,23 +66,24 @@ class TfByteArithmeticExperiment:
             f.write(f"Compression ratio: {self.compression_ratio}\n")
             
     def display_graphs(self):
-        if not hasattr(self, 'logger'):
+        if not hasattr(self, 'compression_logger'):
             raise RuntimeError("The experiment has not been run yet.")
         
-        display = PerformanceDisplay(self.logger.logs)
+        display = PerformanceDisplay(self.compression_logger.logs)
         display.plot_coding_log(os.path.join(self.experiment_folder_path, f"{self.name}_coding_log.png"))
         display.plot_prediction_model_training_log(os.path.join(self.experiment_folder_path, f"{self.name}_prediction_model_training_log.png"))
         display.plot_encoded_symbol_probability(os.path.join(self.experiment_folder_path, f"{self.name}_encoded_symbol_probability.png"))
+        
         
         
 
 
 if __name__ == '__main__':
     experiments_output_path = 'experiments_out'
-    experiment_name = f"enwik3_experiment_{time.strftime('%Y%m%d_%H%M%S')}"
+    experiment_name = f"enwik4_experiment_{time.strftime('%Y%m%d_%H%M%S')}"
     enwik3_path = 'experiments_data/enwiks/enwik3'
 
-    lstm_experiment = TfByteArithmeticExperiment(experiment_name, enwik3_path, experiments_output_path, 0, False)
+    lstm_experiment = TfByteArithmeticExperiment(experiment_name, enwik3_path, experiments_output_path, 3, False)
     lstm_experiment.run()
     lstm_experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     lstm_experiment.display_graphs()

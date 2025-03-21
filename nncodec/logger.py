@@ -117,6 +117,15 @@ class PredictionModelTrainingProgressStep(Log):
 
 class Logger:
     def __init__(self):
+        
+        PreprocessingProgressStep.TotalSteps = None
+        PreprocessingProgressStep.CountedSteps = None
+        CodingProgressStep.TotalSteps = None
+        CodingProgressStep.CountedSteps = None
+        PredictionModelTrainingProgressStep.TotalSteps = None
+        PredictionModelTrainingProgressStep.CountedSteps = None
+        
+        
         self.logs = []
         
         self.record_info = True

@@ -232,7 +232,7 @@ class TfCodec:
         if compressed_model.version != 1:
             raise ValueError("Version not supported")
         
-        preprocessor = get_preprocessor(compressed_model.preprocessor_code)
+        preprocessor = get_preprocessor(compressed_model.preprocessor_code, logger=logger)
         if preprocessor is None:
             raise ValueError("Preprocessor not supported")
         
@@ -250,7 +250,7 @@ class TfCodec:
         
         enable_determinism(42)
         
-        predictor = TfPredictionModel(dictionary, keras_model)
+        predictor = TfPredictionModel(dictionary, keras_model, logger=logger)
         syms = coder.decode(compressed_model.data, dictionary, predictor)
         return preprocessor.convert_from_symbols(syms)
     
