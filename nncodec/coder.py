@@ -231,7 +231,6 @@ class ArithmeticCodec:
             if self.logger is not None:
                 self.logger.log(CodingLog(symbol_size, encoded_bits))
                 self.logger.log(CodingProgressStep(len(output_bits), len(symbols)))
-                self.logger.log(PredictionModelTrainingLog(prediction_model.train(context, symbol)))
                 self.logger.log(PredictionModelTrainingProgressStep(len(context), len(symbols)))
             
 

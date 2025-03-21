@@ -49,9 +49,8 @@ class PredictionModelTrainingLog(Log):
     def __init__(self, loss):
         self.loss = loss
         super().__init__("Prediction_model_training_log", LogLevel.INFO, f"Loss: {loss}")
-        
 
-        
+
         
 class PreprocessingProgressStep(Log):
     
