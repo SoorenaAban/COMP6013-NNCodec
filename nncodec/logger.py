@@ -136,8 +136,8 @@ class Logger:
         self.save_progress = False
         
         self.preprocessor_step_interval_count = 10000
-        self.coding_step_interval_count = 1000
-        self.training_step_interval_count = 1000
+        self.coding_step_interval_count = 100
+        self.training_step_interval_count = 100
 
     def log(self, log):
         if not (isinstance(log, Log) or isinstance(log, str)):
