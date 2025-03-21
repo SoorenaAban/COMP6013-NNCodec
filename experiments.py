@@ -83,7 +83,7 @@ if __name__ == '__main__':
     experiment_name = f"enwik4_experiment_{time.strftime('%Y%m%d_%H%M%S')}"
     enwik3_path = 'experiments_data/enwiks/enwik3'
 
-    lstm_experiment = TfByteArithmeticExperiment(experiment_name, enwik3_path, experiments_output_path, 3, False)
+    lstm_experiment = TfByteArithmeticExperiment(experiment_name, enwik3_path, experiments_output_path, 0, False)
     lstm_experiment.run()
     lstm_experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     lstm_experiment.display_graphs()

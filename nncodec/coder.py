@@ -231,7 +231,6 @@ class ArithmeticCodec:
             if self.logger is not None:
                 self.logger.log(CodingLog(symbol_size, encoded_bits))
                 self.logger.log(CodingProgressStep(len(output_bits), len(symbols)))
-                self.logger.log(PredictionModelTrainingProgressStep(len(context), len(symbols)))
             
 
         for _ in range(state_bits):
@@ -308,6 +307,9 @@ class ArithmeticCodec:
                 next_bit = bitstream[bit_index] if bit_index < len(bitstream) else 0
                 bit_index += 1
                 code = ((code << 1) & ((1 << state_bits) - 1)) | next_bit
+                
+            if self.logger is not None:
+                self.logger.log(CodingProgressStep(len(decoded_symbols), num_symbols))
 
         return decoded_symbols
 

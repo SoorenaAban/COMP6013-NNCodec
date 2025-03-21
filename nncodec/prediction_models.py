@@ -218,6 +218,7 @@ class TfPredictionModel(base_prediction_model):
         return batch_result
 
     def predict(self, symbols):
+        
         """
         Predict the next symbol(s) given a list of input symbols.
         Uses only the last window by default, or a weighted average if specified.
@@ -237,7 +238,13 @@ class TfPredictionModel(base_prediction_model):
             selected_output = np.average(raw_output_np, axis=0, weights=weights)
         selected_output = np.expand_dims(selected_output, axis=0)
         predictions = self._postprocess_predictions(selected_output)
+        
+        
+        if self.logger is not None:
+            self.logger.log(PredictionModelTrainingProgressStep(len(symbols)))
+        
         return predictions[0]
+    
 
     @tf.function
     def _train_step(self, full_inputs, target_tensor):
