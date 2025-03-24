@@ -112,7 +112,7 @@ class TfByteArithmeticExperiment:
 
 if __name__ == '__main__':
     experiments_output_path = 'experiments_out'
-    input_path = 'experiments_data/patterns/Pattern3P3'
+    input_path = 'experiments_data/enwiks/enwik4'
     
     #test experiment:
     # experiment_name = f"experiment_test_{time.strftime('%Y%m%d_%H%M%S')}"
