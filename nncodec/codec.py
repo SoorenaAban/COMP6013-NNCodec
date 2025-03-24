@@ -310,7 +310,7 @@ class TfCodecFile(TfCodec):
 
 
 class TfCodecByte(TfCodec):
-    def compress(self, data, keras_model_code, coder_code, pre_trained_model_path, logger = None):
+    def compress(self, data, keras_model_code, coder_code, pre_trained_model_path = None, logger = None):
         """
         Compresses the input data.
 
