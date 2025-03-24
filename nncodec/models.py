@@ -45,14 +45,19 @@ class SymbolFrequency:
         return f"[{self.symbol},{self.frequency}]"
 
 class Dictionary:
-    """Dictionary class represents the dictionary of symbols in the data"""
+    """Dictionary class represents the dictionary of symbols in the data."""
     def __init__(self):
         self.symbols = set()
+        self._sorted_symbols = None
+        self._symbol_to_index = None
 
     def add(self, symbol):
         if symbol in self.symbols:
             return True
         self.symbols.add(symbol)
+        # Invalidate the cached sorted list and mapping
+        self._sorted_symbols = None
+        self._symbol_to_index = None
         return False
 
     def add_multiple(self, symbols):
@@ -67,13 +72,45 @@ class Dictionary:
 
     def contains(self, symbol):
         return symbol in self.symbols
+
     def contains_data(self, data):
         for symbol in self.symbols:
             if symbol.data == data:
                 return True
         return False
+
     def contains_code(self, code):
         for symbol in self.symbols:
-            if symbol.code == code:
+            if hasattr(symbol, 'code') and symbol.code == code:
                 return True
         return False
+
+    def _build_index(self):
+        """Sort symbols and build a mapping from symbol to its index."""
+        self._sorted_symbols = sorted(self.symbols, key=lambda s: s.data)
+        self._symbol_to_index = {s: i for i, s in enumerate(self._sorted_symbols)}
+
+    def get_index(self, symbol):
+        """Return the index of the given symbol from the sorted list."""
+        if self._symbol_to_index is None:
+            self._build_index()
+        return self._symbol_to_index[symbol]
+
+    def get_sorted_symbols(self):
+        """Return the sorted list of symbols."""
+        if self._sorted_symbols is None:
+            self._build_index()
+        return self._sorted_symbols
+    
+    def get_symbol_by_index(self, index):
+        """Return the symbol at the given index from the sorted symbols list."""
+        return self.get_sorted_symbols()[index]
+    
+    def __eq__(self, value):
+        if not isinstance(value, Dictionary):
+            return False
+        if len(self.symbols) != len(value.symbols):
+            return False
+        for symbol in self.symbols:
+            if not value.contains(symbol):
+                return False

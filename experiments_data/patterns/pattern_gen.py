@@ -11,7 +11,7 @@ fixed_file_path = 'experiments_data/patterns/Pattern3F'
 letter_pattern_3_file_path = 'experiments_data/patterns/Pattern3P3'
 
 #create a file with random letters
-with open(random_file_path, 'w') as f:
+with open(random_file_path, 'w', encoding='utf-8') as f:
     for i in range(file_size):
         f.write(chr(random.randint(0, 255)))
         

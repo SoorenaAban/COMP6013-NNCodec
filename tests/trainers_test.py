@@ -16,7 +16,7 @@ class TestTFTrainer(unittest.TestCase):
                    models.Symbol(b'c'), models.Symbol(b'd')]
         self.dictionary.add_multiple(symbols)
         
-        self.trainer = trainers.tf_trainer(self.dictionary, self.test_keras_model)
+        self.trainer = trainers.TfTrainer(self.dictionary, self.test_keras_model)
 
     def test_invalid_train_input(self):
         with self.assertRaises(ValueError):

@@ -182,7 +182,7 @@ def enable_determinism(seed):
 class TfCodec:
     
     
-    def compress(self, data, preprocessor, keras_model_code, coder, logger = None):
+    def compress(self, data, preprocessor, keras_model_code, coder, pre_trained_model_path = None,  logger = None):
         """
         Compresses the input data.
 
@@ -211,12 +211,16 @@ class TfCodec:
         syms, dictionary = preprocessor.convert_to_symbols(data)
         prpr_header = preprocessor.encode_dictionary_for_header(dictionary)
         keras_model = get_keras_model(keras_model_code, dictionary.get_size())
-        predicitor = TfPredictionModel(dictionary, keras_model, logger= logger)
+        
+        if pre_trained_model_path is not None:
+            predicitor = TfPredictionModel(dictionary, keras_model, model_weights_path=pre_trained_model_path, logger= logger)
+        else:
+            predicitor = TfPredictionModel(dictionary, keras_model, logger= logger)
         data = coder.encode(syms, predicitor)
         compressed_model = CompressedModel(prpr_code, 1, preprocessor.header_size, prpr_header, keras_model_code, coder.coder_code, data)
         return compressed_model
     
-    def decompress(self, compressed_model, logger = None):
+    def decompress(self, compressed_model, pre_trained_model_path = None, logger = None):
         """
         Decompresses encoded data.
 
@@ -250,12 +254,12 @@ class TfCodec:
         
         enable_determinism(42)
         
-        predictor = TfPredictionModel(dictionary, keras_model, logger=logger)
+        predictor = TfPredictionModel(dictionary, keras_model, model_weights_path= pre_trained_model_path, logger=logger)
         syms = coder.decode(compressed_model.data, dictionary, predictor)
         return preprocessor.convert_from_symbols(syms)
     
 class TfCodecFile(TfCodec):
-    def compress(self, input_path, output_path, preprocessor, keras_model_code, coder, logger = None):
+    def compress(self, input_path, output_path, preprocessor, keras_model_code, coder, pre_trained_model_path = None, logger = None):
         """
         Compresses the input file.
 
@@ -275,11 +279,11 @@ class TfCodecFile(TfCodec):
         with open(input_path, 'rb') as f:
             data = f.read()
         
-        compressed_model = super().compress(data, preprocessor, keras_model_code, coder, logger)
+        compressed_model = super().compress(data, preprocessor, keras_model_code, coder, pre_trained_model_path, logger)
         
         CompressedModelFile.write_to_file(compressed_model, output_path)
     
-    def decompress(self, compressed_file_path, output_file_path, logger = None):
+    def decompress(self, compressed_file_path, output_file_path, pre_trained_model_path = None, logger = None):
         """
         Decompresses the input file.
 
@@ -298,7 +302,7 @@ class TfCodecFile(TfCodec):
         
         compressed_model = CompressedModelFile.read_from_file(compressed_file_path)
         
-        data = super().decompress(compressed_model, logger)
+        data = super().decompress(compressed_model, pre_trained_model_path, logger)
         
         with open(output_file_path, 'wb') as f:
             f.write(data)
@@ -306,7 +310,7 @@ class TfCodecFile(TfCodec):
 
 
 class TfCodecByte(TfCodec):
-    def compress(self, data, keras_model_code, coder_code, logger = None):
+    def compress(self, data, keras_model_code, coder_code, pre_trained_model_path, logger = None):
         """
         Compresses the input data.
 
@@ -319,10 +323,10 @@ class TfCodecByte(TfCodec):
         coder = get_coder(coder_code, logger=logger)
         
         
-        return super().compress(data, BytePreprocessor(), keras_model_code, coder, logger)
+        return super().compress(data, BytePreprocessor(), keras_model_code, coder, pre_trained_model_path, logger)
     
 class TfCodecByteFile(TfCodecFile):
-    def compress(self, input_path, output_path, keras_model_code, coder_code, logger = None):
+    def compress(self, input_path, output_path, keras_model_code, coder_code, pre_trained_model_path, logger = None):
         """
         Compresses the input file.
 
@@ -332,11 +336,11 @@ class TfCodecByteFile(TfCodecFile):
         """
         coder = get_coder(coder_code, logger=logger)
         
-        super().compress(input_path, output_path, BytePreprocessor(logger), keras_model_code, coder, logger)
+        super().compress(input_path, output_path, BytePreprocessor(logger), keras_model_code, coder, pre_trained_model_path, logger)
     
 
 class TfCodecByteArithmetic(TfCodecByte):
-    def compress(self, data, keras_model_code, used_deep = True, logger = None):
+    def compress(self, data, keras_model_code, used_deep = True, pre_trained_model_path = None, logger = None):
         """
         Compresses the input data.
 
@@ -351,11 +355,11 @@ class TfCodecByteArithmetic(TfCodecByte):
         else:
             coder_code = 1
         
-        return super().compress(data, keras_model_code, coder_code, logger)
+        return super().compress(data, keras_model_code, coder_code, pre_trained_model_path, logger)
     
     
 class TfCodecByteArithmeticFile(TfCodecByteFile):
-    def compress(self, input_path, output_path, keras_model_code, used_deep = True, logger = None):
+    def compress(self, input_path, output_path, keras_model_code, used_deep = True, pre_trained_model_path = None, logger = None):
         """
         Compresses the input file.
 
@@ -369,4 +373,4 @@ class TfCodecByteArithmeticFile(TfCodecByteFile):
         else:
             coder_code = 1
         
-        super().compress(input_path, output_path, keras_model_code, coder_code, logger)
+        super().compress(input_path, output_path, keras_model_code, coder_code, pre_trained_model_path, logger)

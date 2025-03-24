@@ -5,6 +5,7 @@ import numpy as np
 import os
 import tempfile
 import struct
+from io import BytesIO
 
 from .models import Symbol
 from .logger import *
@@ -54,6 +55,75 @@ class ArithmeticCoderSettings:
     def __init__(self, scaling_factor=10000000, offset=1):
         self.scaling_factor = scaling_factor
         self.offset = offset
+
+class BitOutputStream:
+    def __init__(self, out):
+        """
+        Initialize with an underlying output stream (e.g., a file opened in binary mode).
+        """
+        self.out = out
+        self.current_byte = 0
+        self.num_bits_filled = 0  # how many bits have been written to current_byte
+
+    def write(self, bit):
+        """
+        Write a single bit (0 or 1) to the stream.
+        """
+        if bit not in (0, 1):
+            raise ValueError("Bit must be 0 or 1")
+        self.current_byte = (self.current_byte << 1) | bit
+        self.num_bits_filled += 1
+        if self.num_bits_filled == 8:
+            self.flush_current_byte()
+
+    def flush_current_byte(self):
+        """
+        Write the current byte to the underlying stream and reset the buffer.
+        """
+        self.out.write(bytes((self.current_byte,)))
+        self.current_byte = 0
+        self.num_bits_filled = 0
+
+    def finish(self):
+        """
+        Flush any remaining bits to the stream by padding with zeros.
+        Optionally, you could record the number of valid bits.
+        """
+        if self.num_bits_filled > 0:
+            # Option 1: Simply pad the remaining bits with zeros.
+            self.current_byte = self.current_byte << (8 - self.num_bits_filled)
+            self.flush_current_byte()
+        self.out.flush()
+
+    def close(self):
+        self.finish()
+        self.out.close()
+
+class BitInputStream:
+    def __init__(self, inp):
+        """
+        Initialize with an underlying input stream (e.g., a file opened in binary mode).
+        """
+        self.inp = inp
+        self.current_byte = 0
+        self.num_bits_remaining = 0
+
+    def read(self):
+        """
+        Read a single bit from the stream. Returns 0 or 1, or -1 if no more bits are available.
+        """
+        if self.num_bits_remaining == 0:
+            byte = self.inp.read(1)
+            if len(byte) == 0:
+                return -1  # End of stream
+            self.current_byte = byte[0]
+            self.num_bits_remaining = 8
+        self.num_bits_remaining -= 1
+        return (self.current_byte >> self.num_bits_remaining) & 1
+
+    def close(self):
+        self.inp.close()
+
 
 class ArithmeticCodec:
     """
@@ -163,112 +233,104 @@ class ArithmeticCodec:
                 bits.append((byte >> i) & 1)
         return bits
 
+
     def integer_arithmetic_encode_symbols(self, symbols, prediction_model, dictionary, state_bits=32, train_callback=None):
-        """
-        Shared integer-based arithmetic encoding.
-        
-        Args:
-            symbols (list): List of symbol objects.
-            prediction_model: Prediction model to provide probability distributions.
-            dictionary: Dictionary for symbol ordering.
-            state_bits (int): Number of bits for state representation.
-            train_callback (callable): Function called after encoding each symbol.
-                                       Should accept (context, symbol). If None, no training is done.
-        
-        Returns:
-            bytes: The packed arithmetic-coded bitstream.
-        """
         low = 0
-        high = (1 << state_bits) - 1
-        output_bits = []
+        full_range = 1 << state_bits  
+        half_range = full_range >> 1  
+        quarter_range = half_range >> 1  
+        high = full_range - 1
+
+        # Instead of a list, create a BytesIO to hold the output
+        out_buffer = BytesIO()
+        bit_out = BitOutputStream(out_buffer)
+        
+        underflow = 0
         context = []
 
         for symbol in symbols:
-            bits_before = len(output_bits)  # for logging
+            
+            bits_before = out_buffer.tell() * 8 + bit_out.num_bits_filled # for logging
+            
             probs = prediction_model.predict(context)
-            
-            
             cum_freq = self.probabilities_to_code(probs)
             total = cum_freq[-1]
 
-            try:
-                symbol_index = dictionary.get_index(symbol)
-            except AttributeError:
-                sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
-                symbol_index = None
-                for idx, s in enumerate(sorted_symbols):
-                    if s == symbol:
-                        symbol_index = idx
-                        break
-                if symbol_index is None:
-                    raise ValueError("Symbol not found in dictionary")
-                
-            
-            if self.logger is not None:
-                self.logger.log(EncodedSymbolProbability(symbol, probs[symbol_index].frequency.item()))
+            symbol_index = dictionary.get_index(symbol)
             
             sym_low = cum_freq[symbol_index - 1] if symbol_index > 0 else 0
             sym_high = cum_freq[symbol_index]
-
             current_range = high - low + 1
             new_low = low + (sym_low * current_range) // total
             new_high = low + (sym_high * current_range) // total - 1
             low, high = new_low, new_high
+            
+            if self.logger is not None:
+                self.logger.log(EncodedSymbolProbability(symbol, probs[symbol_index].frequency.item()))
 
-            while (low >> (state_bits - 1)) == (high >> (state_bits - 1)):
-                bit = low >> (state_bits - 1)
-                output_bits.append(bit)
-                low = (low << 1) & ((1 << state_bits) - 1)
-                high = ((high << 1) & ((1 << state_bits) - 1)) | 1
+            while True:
+                if high < half_range:
+                    bit_out.write(0)
+                    for _ in range(underflow):
+                        bit_out.write(1)
+                    underflow = 0
+                elif low >= half_range:
+                    bit_out.write(1)
+                    for _ in range(underflow):
+                        bit_out.write(0)
+                    underflow = 0
+                    low -= half_range
+                    high -= half_range
+                elif low >= quarter_range and high < 3 * quarter_range:
+                    underflow += 1
+                    low -= quarter_range
+                    high -= quarter_range
+                else:
+                    break
+                low = (low << 1) & (full_range - 1)
+                high = ((high << 1) & (full_range - 1)) | 1
 
             if train_callback is not None:
                 train_callback(context, symbol)
             context.append(symbol)
             
-            bits_after = len(output_bits)  # for logging
+            bits_after = out_buffer.tell() * 8 + bit_out.num_bits_filled # for logging
             encoded_bits = bits_after - bits_before # for logging
-            symbol_size = len(symbol.data) * 8 # for logging
+            symbol_size = len(symbol.data) * 8  # for logging
             if self.logger is not None:
                 self.logger.log(CodingLog(symbol_size, encoded_bits))
-                self.logger.log(CodingProgressStep(len(output_bits), len(symbols)))
-            
+                self.logger.log(CodingProgressStep(bits_after, len(symbols)))
 
-        for _ in range(state_bits):
-            bit = low >> (state_bits - 1)
-            output_bits.append(bit)
-            low = (low << 1) & ((1 << state_bits) - 1)
-
-        return self.pack_bits_to_bytes(output_bits)
-
-    def integer_arithmetic_decode(self, bitstream, num_symbols, prediction_model, dictionary, state_bits=32, train_callback=None):
-        """
-        Shared integer-based arithmetic decoding.
+        underflow += 1
+        if low < quarter_range:
+            bit_out.write(0)
+            for _ in range(underflow):
+                bit_out.write(1)
+        else:
+            bit_out.write(1)
+            for _ in range(underflow):
+                bit_out.write(0)
         
-        Args:
-            bitstream (list[int]): List of bits representing the encoded data.
-            num_symbols (int): Number of symbols expected.
-            prediction_model: Prediction model to provide probability distributions.
-            dictionary: Dictionary for symbol ordering.
-            state_bits (int): Number of bits for state representation.
-            train_callback (callable): Function called after decoding each symbol.
-                                       Should accept (context, symbol). If None, no training is done.
-        
-        Returns:
-            list: The list of decoded symbols.
-        """
+        bit_out.finish()
+        return out_buffer.getvalue()
+
+
+    def integer_arithmetic_decode(self, bit_in, num_symbols, prediction_model, dictionary, state_bits=32, train_callback=None):
+        full_range = 1 << state_bits
+        half_range = full_range >> 1
+        quarter_range = half_range >> 1
         low = 0
-        high = (1 << state_bits) - 1
+        high = full_range - 1
+
         code = 0
-        bit_index = 0
         for _ in range(state_bits):
-            code = (code << 1) | (bitstream[bit_index] if bit_index < len(bitstream) else 0)
-            bit_index += 1
+            next_bit = bit_in.read()
+            code = (code << 1) | (next_bit if next_bit != -1 else 0)
 
         decoded_symbols = []
         context = []
         for _ in range(num_symbols):
             probs = prediction_model.predict(context)
-            
             cum_freq = self.probabilities_to_code(probs)
             total = cum_freq[-1]
             current_range = high - low + 1
@@ -281,15 +343,11 @@ class ArithmeticCodec:
                     break
             if symbol_index is None:
                 raise ValueError("Failed to decode symbol: no matching frequency range found.")
-
-            try:
-                decoded_symbol = dictionary.get_symbol_by_index(symbol_index)
-            except AttributeError:
-                sorted_symbols = sorted(dictionary.symbols, key=lambda s: s.data)
-                if symbol_index >= len(sorted_symbols):
-                    raise ValueError("Decoded symbol index out of range.")
-                decoded_symbol = sorted_symbols[symbol_index]
             
+
+            decoded_symbol = dictionary.get_symbol_by_index(symbol_index)
+            
+
             if train_callback is not None:
                 train_callback(context, decoded_symbol)
             decoded_symbols.append(decoded_symbol)
@@ -301,17 +359,30 @@ class ArithmeticCodec:
             new_high = low + (sym_high * current_range) // total - 1
             low, high = new_low, new_high
 
-            while (low >> (state_bits - 1)) == (high >> (state_bits - 1)):
-                low = (low << 1) & ((1 << state_bits) - 1)
-                high = ((high << 1) & ((1 << state_bits) - 1)) | 1
-                next_bit = bitstream[bit_index] if bit_index < len(bitstream) else 0
-                bit_index += 1
-                code = ((code << 1) & ((1 << state_bits) - 1)) | next_bit
-                
+            while True:
+                if high < half_range:
+                    pass
+                elif low >= half_range:
+                    low -= half_range
+                    high -= half_range
+                    code -= half_range
+                elif low >= quarter_range and high < 3 * quarter_range:
+                    low -= quarter_range
+                    high -= quarter_range
+                    code -= quarter_range
+                else:
+                    break
+                low = (low << 1) & (full_range - 1)
+                high = ((high << 1) & (full_range - 1)) | 1
+                next_bit = bit_in.read()
+                code = ((code << 1) & (full_range - 1)) | (next_bit if next_bit != -1 else 0)
+
             if self.logger is not None:
-                self.logger.log(CodingProgressStep(len(decoded_symbols), num_symbols))
+                self.logger.log(EncodedSymbolProbability(decoded_symbol, probs[symbol_index].frequency.item()))
+                self.logger.log(CodingProgressStep(bit_in.inp.tell() * 8, num_symbols))
 
         return decoded_symbols
+
 
 class ArithmeticCoder(CoderBase):
     def __init__(self, arithmetic_coder_settings, logger=None):
@@ -347,7 +418,8 @@ class ArithmeticCoder(CoderBase):
         header = data[:4]
         num_symbols = int.from_bytes(header, byteorder='big')
         bitstream_data = data[4:]
-        bitstream = self.codec.unpack_bytes_to_bits(bitstream_data)
+        in_buffer = BytesIO(bitstream_data)
+        bitstream = BitInputStream(in_buffer)
         decoded_symbols = self.codec.integer_arithmetic_decode(
             bitstream, 
             num_symbols, 
@@ -438,7 +510,8 @@ class ArithmeticCoderDeep(CoderBase):
         msg_length_header = arithmetic_data[:4]
         message_length = struct.unpack(">I", msg_length_header)[0]
         bitstream_bytes = arithmetic_data[4:]
-        bitstream = self.codec.unpack_bytes_to_bits(bitstream_bytes)
+        in_buffer = BytesIO(bitstream_bytes)
+        bitstream = BitInputStream(in_buffer)
         decoded_symbols = self.codec.integer_arithmetic_decode(
             bitstream, 
             message_length, 
