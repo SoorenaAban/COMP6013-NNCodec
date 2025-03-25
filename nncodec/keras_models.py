@@ -38,7 +38,10 @@ class TFKerasModelBase(tf.keras.Model):
 
 
 class LstmKerasModel(TFKerasModelBase):
-    """ The parameters of this Lstm Keras subclass are based on the tensorflow-compress library"""
+    """ 
+    The parameters of this Lstm Keras subclass are based on the tensorflow-compress library.
+    Updated to support stateful behavior by returning updated LSTM states.
+    """
     def __init__(self, vocab_size, **kwargs):
         super(LstmKerasModel, self).__init__(**kwargs)
         self.batch_size = 256
@@ -87,7 +90,7 @@ class LstmKerasModel(TFKerasModelBase):
             return inputs[:, -1, :]
 
     @tf.function
-    def call(self, inputs, training=False):
+    def call(self, inputs, training=False, return_states=False):
         expected_inputs = 1 + 2 * self.num_layers
         if not isinstance(inputs, (list, tuple)) or len(inputs) != expected_inputs:
             raise ValueError(f"Expected {expected_inputs} inputs, got {len(inputs)}")
@@ -95,19 +98,23 @@ class LstmKerasModel(TFKerasModelBase):
         main_input = inputs[0]
         embedded = self.embedding(main_input)
         skip_connections = []
+        new_states = []
         
+        # Process first LSTM layer.
         init_state_0 = [inputs[1], inputs[2]]
-        x, _, _ = self.lstm_layers[0](embedded, initial_state=init_state_0, training=training)
+        x, state_h, state_c = self.lstm_layers[0](embedded, initial_state=init_state_0, training=training)
         skip_connections.append(x)
+        new_states.extend([state_h, state_c])
         
         for i in range(1, self.num_layers):
             concatenated = tf.keras.layers.concatenate(
                 [embedded, skip_connections[i-1]],
                 name=f"concat_{i}"
             )
-            init_state = [inputs[1 + 2*i], inputs[2 + 2*i]]
-            x, _, _ = self.lstm_layers[i](concatenated, initial_state=init_state, training=training)
+            init_state = [inputs[1 + 2 * i], inputs[2 + 2 * i]]
+            x, state_h, state_c = self.lstm_layers[i](concatenated, initial_state=init_state, training=training)
             skip_connections.append(x)
+            new_states.extend([state_h, state_c])
         
         final_outputs = [self.last_time_steps[i](skip_connections[i]) for i in range(self.num_layers)]
         if self.num_layers == 1:
@@ -115,7 +122,13 @@ class LstmKerasModel(TFKerasModelBase):
         else:
             layer_input_final = tf.keras.layers.concatenate(final_outputs, name="final_concat")
         logits = self.dense(layer_input_final)
-        return self.softmax(logits)
+        predictions = self.softmax(logits)
+        
+        # By default, return only the predictions tensor (so that output.shape is defined).
+        if return_states:
+            return [predictions] + new_states
+        else:
+            return predictions
 
 class GruKerasModel(TFKerasModelBase):
     """GRU-based Keras subclass model mimicking the LSTM model architecture."""

@@ -37,7 +37,7 @@ class KerasModelsTest(unittest.TestCase):
         row_sums = tf.reduce_sum(output, axis=1).numpy()
         np.testing.assert_allclose(row_sums, np.ones(model.batch_size), atol=1e-5)
 
-    def test_TFPredictionDefaultKerasModel(self):
+    def test_TFPredictionLstmKerasModel(self):
         model = LstmKerasModel(vocab_size=self.vocab_size)
         dummy_input = self.build_dummy_input(model)
         output = model(dummy_input)
