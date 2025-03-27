@@ -97,22 +97,40 @@ class TfByteArithmeticExperiment:
             f.write(f"Decompressed file size: {self.decompressed_file_size}\n")
             f.write(f"Compression ratio: {self.compression_ratio}\n")
             
+    
+    def save_results(self, file_path: str):
+        self.save_report_in_text(file_path)
+        
+                
     def display_graphs(self):
         if not hasattr(self, 'compression_logger'):
             raise RuntimeError("The experiment has not been run yet.")
         
         display = PerformanceDisplay(self.compression_logger.logs)
-        display.plot_coding_log(os.path.join(self.experiment_folder_path, f"{self.name}_coding_log.png"))
-        display.plot_prediction_model_training_log(os.path.join(self.experiment_folder_path, f"{self.name}_prediction_model_training_log.png"))
-        display.plot_encoded_symbol_probability(os.path.join(self.experiment_folder_path, f"{self.name}_encoded_symbol_probability.png"))
-        
-        
+        display.generate_prediction_model_training_log_plot(os.path.join(self.experiment_folder_path, f"{self.name}_prediction_model_training_log.png"))
+        display.generate_encoded_symbol_probability_plot(os.path.join(self.experiment_folder_path, f"{self.name}_encoded_symbol_probability.png"))
+               
         
 
 
 if __name__ == '__main__':
     experiments_output_path = 'experiments_out'
     input_path = 'experiments_data/enwiks/enwik4'
+    
+    experiment_datas = [
+        ('experiments_data/patterns/file1_ones.bin', 'ones'),
+        ('experiments_data/patterns/file2_pattern123.bin', 'pattern123'),
+        ('experiments_data/patterns/file3_growing_pattern.bin', 'growing_pattern'),
+        ('experiments_data/patterns/file4_fibonacci.bin', 'fibonacci'),
+        ('experiments_data/patterns/file5_random.bin', 'random')
+    ]
+    
+    for input_path, name in experiment_datas:
+        experiment_name = f"experiment_{name}_{time.strftime('%Y%m%d_%H%M%S')}"
+        experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 0, False)
+        experiment.run()
+        experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
+        experiment.display_graphs()
     
     #test experiment:
     # experiment_name = f"experiment_test_{time.strftime('%Y%m%d_%H%M%S')}"
@@ -123,23 +141,23 @@ if __name__ == '__main__':
     # experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     # experiment.display_graphs()
 
-    #lstm_experiment (online learning)
-    experiment_name = f"experiment_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
-    experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
-    experiment.run()
-    experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
+    # #lstm_experiment (online learning)
+    # experiment_name = f"experiment_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
+    # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
+    # experiment.run()
+    # experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     
-    #lstm_experiment (deep learning)
-    experiment_name = f"experiment_lstm_deep_{time.strftime('%Y%m%d_%H%M%S')}"
-    experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, True)
-    experiment.run()
-    experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
+    # #lstm_experiment (deep learning)
+    # experiment_name = f"experiment_lstm_deep_{time.strftime('%Y%m%d_%H%M%S')}"
+    # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, True)
+    # experiment.run()
+    # experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     
-    #gru_experiment (online learning)
-    experiment_name = f"experiment_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
-    experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 2, False)
-    experiment.run()
-    experiment.save_report_in_text(os.path.join(experiments_output_path, f"{experiment_name}.txt"))
+    # #gru_experiment (online learning)
+    # experiment_name = f"experiment_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
+    # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 2, False)
+    # experiment.run()
+    # experiment.save_report_in_text(os.path.join(experiments_output_path, f"{experiment_name}.txt"))
     
     # #training experiments:
     # input_path = 'experiments_data/wikipedia_large_pages_txt/List of subnational entities by Human Development Index - Wikipedia.txt'

@@ -178,3 +178,4 @@ experiments_data/enwiks/enwik8
 experiments_data/enwiks/enwik9
 
 experiments_out/
+experiments_data/patterns/pattern_gen.py

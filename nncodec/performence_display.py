@@ -50,7 +50,7 @@ class PerformanceDisplay:
             raise ValueError("moving_avg_window must be at least 1")
         return np.convolve(data, np.ones(window) / window, mode='same')
     
-    def _plot_graph(self, y_values, title, xlabel, ylabel, save_path=None):
+    def _plot_graph(self, y_values, title, xlabel, ylabel, show_graph = False, save_path=None):
         """
         Unified plotting function that generates a scatter plot with a moving average trend line.
         
@@ -86,9 +86,10 @@ class PerformanceDisplay:
         
         if save_path:
             plt.savefig(save_path)
-        plt.show()
+        if show_graph:
+            plt.show()
 
-    def plot_encoded_symbol_probability(self, save_path=None):
+    def generate_encoded_symbol_probability_plot(self, save_path=None):
         """
         Extracts the probability values from EncodedSymbolProbability logs and plots them.
         Y-axis: log.prob (probability).
@@ -96,7 +97,7 @@ class PerformanceDisplay:
         values = [log.prob for log in self.logs if hasattr(log, 'prob')]
         self._plot_graph(values, "Encoded Symbol Probability", "Log Entry Order", "Probability", save_path)
 
-    def plot_prediction_model_training_log(self, save_path=None):
+    def generate_prediction_model_training_log_plot(self, save_path=None):
         """
         Extracts the loss values from PredictionModelTrainingLog logs and plots them.
         Y-axis: log.loss (training loss).
@@ -104,15 +105,15 @@ class PerformanceDisplay:
         values = [log.loss for log in self.logs if hasattr(log, 'loss')]
         self._plot_graph(values, "Prediction Model Training Loss", "Log Entry Order", "Loss", save_path)
 
-    def plot_coding_log(self, save_path=None):
-        """
-        Computes the ratio (symbol_size / encoded_size) from CodingLog logs and plots them.
-        Y-axis: ratio computed as (symbol_size / encoded_size).
-        """
-        values = []
-        for log in self.logs:
-            if hasattr(log, 'symbol_size') and hasattr(log, 'encoded_size'):
-                # Prevent division by zero.
-                ratio = log.symbol_size / log.encoded_size if log.encoded_size != 0 else 0
-                values.append(ratio)
-        self._plot_graph(values, "Coding Log Ratio (symbol_size / encoded_size)", "Log Entry Order", "Ratio", save_path)
+    # def plot_coding_log(self, save_path=None):
+    #     """
+    #     Computes the ratio (symbol_size / encoded_size) from CodingLog logs and plots them.
+    #     Y-axis: ratio computed as (symbol_size / encoded_size).
+    #     """
+    #     values = []
+    #     for log in self.logs:
+    #         if hasattr(log, 'symbol_size') and hasattr(log, 'encoded_size'):
+    #             # Prevent division by zero.
+    #             ratio = log.symbol_size / log.encoded_size if log.encoded_size != 0 else 0
+    #             values.append(ratio)
+    #     self._plot_graph(values, "Coding Log Ratio (symbol_size / encoded_size)", "Log Entry Order", "Ratio", save_path)
