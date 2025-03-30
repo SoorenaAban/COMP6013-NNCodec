@@ -122,11 +122,11 @@ if __name__ == '__main__':
         ('experiments_data/patterns/file3_growing_pattern.bin', 'growing_pattern'),
         ('experiments_data/patterns/file4_fibonacci.bin', 'fibonacci'),
         ('experiments_data/patterns/file5_random.bin', 'random'),
-        ('experiments_data/enwiks/enwik5', 'enwik'),
+        ('experiments_data/enwiks/enwik4', 'enwik'),
     ]
     
     for input_path, name in experiment_datas:
-        experiment_name = f"experiment_5_{name}_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
+        experiment_name = f"experiment_4_{name}_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
         experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
         experiment.run()
         experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
