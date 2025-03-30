@@ -115,7 +115,7 @@ class TfByteArithmeticExperiment:
 
 if __name__ == '__main__':
     experiments_output_path = 'experiments_out'
-    input_path = 'experiments_data/enwiks/enwik4'
+    input_path = 'experiments_data/enwiks/enwik3'
     
     experiment_datas = [
         ('experiments_data/patterns/file1_ones.bin', 'ones'),
@@ -129,8 +129,7 @@ if __name__ == '__main__':
         experiment_name = f"experiment_{name}_{time.strftime('%Y%m%d_%H%M%S')}"
         experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 0, False)
         experiment.run()
-        experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
-        experiment.display_graphs()
+        experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     
     #test experiment:
     # experiment_name = f"experiment_test_{time.strftime('%Y%m%d_%H%M%S')}"

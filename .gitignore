@@ -180,3 +180,9 @@ experiments_data/enwiks/enwik9
 experiments_out/
 experiments_data/patterns/pattern_gen.py
 experiments_data/patterns/pattern_gen.py
+experiments_data/patterns/pattern_gen.py
+experiments_data/patterns/file5_random.bin
+experiments_data/patterns/file4_fibonacci.bin
+experiments_data/patterns/file3_growing_pattern.bin
+experiments_data/patterns/file2_pattern123.bin
+experiments_data/patterns/file1_ones.bin

@@ -4,7 +4,7 @@ import random
 # ---------------------------
 # Configuration Variables
 # ---------------------------
-FILE_SIZE = 100000  # exact file size in bytes
+FILE_SIZE = 1000  # exact file size in bytes
 OUTPUT_FOLDER = 'experiments_data/patterns'  # folder to place the files (default: current folder)
 
 # File names
