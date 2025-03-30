@@ -10,7 +10,7 @@ from .models import Symbol, SymbolFrequency, Dictionary
 from .settings import TF_SEED
 from .logger import *
 
-class base_prediction_model(abc.ABC):
+class BasePredictionModel(abc.ABC):
     def __init__(self, dictionary):
         """
         Initialize the prediction model.
@@ -41,7 +41,7 @@ class base_prediction_model(abc.ABC):
         pass
 
 
-class testing_prediction_model(base_prediction_model):
+class testing_prediction_model(BasePredictionModel):
     """A simple testing model (not using Keras) for unit tests."""
     def __init__(self, dictionary):
         self.dictionary = dictionary
@@ -76,7 +76,7 @@ class testing_prediction_model(base_prediction_model):
         return 0
 
 
-class TfPredictionModel(base_prediction_model):
+class TfPredictionModel(BasePredictionModel):
     def enable_determinism(self, seed):
         """
         Initialize random seeds for determinism.

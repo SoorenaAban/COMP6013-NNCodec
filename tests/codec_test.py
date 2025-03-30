@@ -59,7 +59,7 @@ class TestTfCodec(unittest.TestCase):
         codec = TfCodec()
         data = b'Testing Data'
         preprocessor = BytePreprocessor()
-        coder = ArithmeticCoder(ArithmeticCoderSettings())
+        coder = ArithmeticCoderOnline(ArithmeticCoderSettings())
         compressed_data = codec.compress(data, preprocessor, 0, coder)
         decompressed_data = codec.decompress(compressed_data)
         
@@ -81,7 +81,7 @@ class TestTfCodecFile(unittest.TestCase):
         
         compressed_file_name = temp_file_name + '.compressed'
         preprocessor = BytePreprocessor()
-        coder = ArithmeticCoder(ArithmeticCoderSettings())
+        coder = ArithmeticCoderOnline(ArithmeticCoderSettings())
         codec.compress(temp_file_name, compressed_file_name, preprocessor, 0, coder)
         
         #perform decompression

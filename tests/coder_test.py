@@ -56,7 +56,7 @@ class TestArithmeticCoder(unittest.TestCase):
         self.dictionary.add_multiple(symbols)
         
         self.arith_settings = coder.ArithmeticCoderSettings()
-        self.coder = coder.ArithmeticCoder(self.arith_settings)
+        self.coder = coder.ArithmeticCoderOnline(self.arith_settings)
         self.prediction_model = pred.testing_prediction_model(self.dictionary)
 
     def test_encode_returns_bytes(self):
@@ -85,7 +85,7 @@ class TestArithmeticCoderDeep(unittest.TestCase):
         self.dictionary.add_multiple(symbols)
         
         self.arith_settings = coder.ArithmeticCoderSettings()
-        self.coder_deep = coder.ArithmeticCoderDeep(self.arith_settings)
+        self.coder_deep = coder.ArithmeticCoderOffline(self.arith_settings)
         self.prediction_model = pred.testing_prediction_model(self.dictionary)
         
         def dummy_save_model(self, path):
