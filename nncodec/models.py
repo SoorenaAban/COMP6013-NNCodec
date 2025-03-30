@@ -1,7 +1,7 @@
 """
 models.py
 
-The shared objects used in the nncodec.
+The shared objects used in the nncodec
 
 """
 
