@@ -1,14 +1,14 @@
 import tensorflow as tf
 from typing import Any, List, Union
 
-from .settings import TF_SEED 
+from .settings import SEED 
 
 
 class TFKerasModelBase(tf.keras.Model):
     """     Base class for predefined Keras models in our prediction framework. """
     def __init__(self, **kwargs: Any) -> None:
         super(TFKerasModelBase, self).__init__(**kwargs)
-        self.seed: int = TF_SEED
+        self.seed: int = SEED
         self.keras_code: int = -1
 
     def serialize_model(self) -> None:

@@ -1,59 +1,44 @@
-# trainers.py
-
 import abc
+from typing import List, Optional, Any
+
 from .prediction_models import TfPredictionModel
-from .models import Dictionary
-from .keras_models import LstmKerasModel
+from .models import Symbol
+from .logger import Logger
 
 
-class base_trainer(abc.ABC):
-    # @abc.abstractmethod
-    # def __init__(self, dictionary, model_config, model_weights_path=None):
-    #     """
-    #     Initializes the trainer with a symbols dictionary, prediction model configurations,
-    #     and optionally the address of an existing model to train upon.
-        
-    #     Args:
-    #         dictionary: The symbols dictionary (e.g. a models.Dictionary instance).
-    #         model_config (dict): Configuration parameters for the prediction model.
-    #         model_weights_path (str, optional): File path of an existing model to train upon.
-    #     """
-    #     pass
-
-    # @abc.abstractmethod
-    # def save(self, filepath):
-    #     """
-    #     Saves the model's weights to the given file path.
-        
-    #     Args:
-    #         filepath (str): The file path to save the model weights.
-    #     """
-    #     pass
+class BaseTrainer(abc.ABC):
+    """
+    Abstract base class for trainers.
+    """
 
     @abc.abstractmethod
-    def train(self, symbols_collection):
+    def train(self, 
+              prediction_model: TfPredictionModel, 
+              symbols_collection: List[Symbol], 
+              logger: Optional[Logger] = None) -> None:
         """
-        Trains the model on a collection of symbols.
+        Train the prediction model on a collection of symbols.
         
         For each symbol in the collection, the model is trained using the previous symbols as input.
         For the first symbol, an empty list is used.
         
         Args:
-            symbols_collection (list): A collection (list) of symbols to be used for training.
+            prediction_model (TfPredictionModel): The prediction model to train.
+            symbols_collection (List[Symbol]): A list of symbols used for training.
+            logger (Optional[Logger]): An optional logger for progress reporting.
         """
         pass
 
 
-class TfTrainer(base_trainer):
-    # def __init__(self, tf_prediction_model, logger=None):
-    #     self.prediction_model = tf_prediction_model
+class TfTrainer(BaseTrainer):
+    """
+    Trainer for TensorFlow-based prediction models.
+    """
 
-    # def save(self, filepath):
-    #     if not isinstance(filepath, str) or not filepath.strip():
-    #         raise ValueError("The provided filepath must be a non-empty string.")
-    #     self.prediction_model.save_model(filepath)
-
-    def train(self, prediction_model, symbols_collection, logger=None):
+    def train(self, 
+              prediction_model: TfPredictionModel, 
+              symbols_collection: List[Symbol], 
+              logger: Optional[Logger] = None) -> None:
         if not isinstance(symbols_collection, list):
             raise ValueError("symbols_collection must be a list of symbols.")
         if len(symbols_collection) == 0:

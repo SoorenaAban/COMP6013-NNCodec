@@ -1,2 +1,1 @@
-#TF settings
-TF_SEED = 1234
+SEED = 1234
