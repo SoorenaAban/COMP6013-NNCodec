@@ -1,7 +1,7 @@
 import unittest
 
-from nncodec.codec import *
-from nncodec.coder import *
+from nncodec.codecs import *
+from nncodec.coders import *
 from nncodec.preprocessors import *
 
 class TestCompressedModel(unittest.TestCase):

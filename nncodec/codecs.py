@@ -11,7 +11,7 @@ from keras import mixed_precision
 from .validators import validate_type, validate_file_exists  
 from .prediction_models import TfPredictionModel
 from .preprocessors import BasePreprocessor, BytePreprocessor, get_preprocessor      
-from .coder import CoderBase, get_coder         
+from .coders import CoderBase, get_coder         
 from .keras_models import get_keras_model       
 from .logger import Logger            
 

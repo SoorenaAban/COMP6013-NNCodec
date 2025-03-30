@@ -2,7 +2,7 @@
 import time
 import os
 
-from nncodec.codec import *
+from nncodec.codecs import *
 from nncodec.performence_display import *
 from nncodec.trainers import *
 from nncodec.prediction_models import *

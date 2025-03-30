@@ -5,13 +5,13 @@ import os
 import types
 
 from nncodec import models
-from nncodec import coder
+from nncodec import coders
 from nncodec import prediction_models as pred
 
 class TestArithmeticCodec(unittest.TestCase):
     def setUp(self):
-        self.settings = coder.ArithmeticCoderSettings()
-        self.codec = coder.ArithmeticCodec(self.settings)
+        self.settings = coders.ArithmeticCoderSettings()
+        self.codec = coders.ArithmeticCodec(self.settings)
     
     def test_probabilities_to_code_valid(self):
         probs = [0.1, 0.2, 0.7]
@@ -55,8 +55,8 @@ class TestArithmeticCoder(unittest.TestCase):
         symbols = [models.Symbol(b'a'), models.Symbol(b'b'), models.Symbol(b'c')]
         self.dictionary.add_multiple(symbols)
         
-        self.arith_settings = coder.ArithmeticCoderSettings()
-        self.coder = coder.ArithmeticCoderOnline(self.arith_settings)
+        self.arith_settings = coders.ArithmeticCoderSettings()
+        self.coder = coders.ArithmeticCoderOnline(self.arith_settings)
         self.prediction_model = pred.testing_prediction_model(self.dictionary)
 
     def test_encode_returns_bytes(self):
@@ -84,8 +84,8 @@ class TestArithmeticCoderDeep(unittest.TestCase):
         symbols = [models.Symbol(b'a'), models.Symbol(b'b'), models.Symbol(b'c')]
         self.dictionary.add_multiple(symbols)
         
-        self.arith_settings = coder.ArithmeticCoderSettings()
-        self.coder_deep = coder.ArithmeticCoderOffline(self.arith_settings)
+        self.arith_settings = coders.ArithmeticCoderSettings()
+        self.coder_deep = coders.ArithmeticCoderOffline(self.arith_settings)
         self.prediction_model = pred.testing_prediction_model(self.dictionary)
         
         def dummy_save_model(self, path):
