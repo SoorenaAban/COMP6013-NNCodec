@@ -356,7 +356,7 @@ class ArithmeticCodec:
                 high = ((high << 1) & (full_range - 1)) | 1
 
             if train_callback is not None:
-                Logger.log(PredictionModelTrainingProgressStep(len(context), len(symbols)))
+                self.logger.log(PredictionModelTrainingProgressStep(len(context), len(symbols)))
                 train_callback(context, symbol)
             context.append(symbol)
             
