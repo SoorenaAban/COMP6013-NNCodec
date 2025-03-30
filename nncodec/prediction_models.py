@@ -351,8 +351,7 @@ class TfPredictionModel(BasePredictionModel):
             selected_output = np.average(raw_output_np, axis=0, weights=weights)
         selected_output = np.expand_dims(selected_output, axis=0)
         predictions_post = self._postprocess_predictions(selected_output)
-        if self.logger is not None:
-            self.logger.log(PredictionModelTrainingProgressStep(len(symbols)))
+        
         return predictions_post[0]
     
     @tf.function

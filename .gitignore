@@ -186,3 +186,4 @@ experiments_data/patterns/file4_fibonacci.bin
 experiments_data/patterns/file3_growing_pattern.bin
 experiments_data/patterns/file2_pattern123.bin
 experiments_data/patterns/file1_ones.bin
+experiments_data/patterns/pattern_gen.py

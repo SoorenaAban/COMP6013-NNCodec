@@ -115,21 +115,25 @@ class TfByteArithmeticExperiment:
 
 if __name__ == '__main__':
     experiments_output_path = 'experiments_out'
-    input_path = 'experiments_data/enwiks/enwik3'
     
     experiment_datas = [
         ('experiments_data/patterns/file1_ones.bin', 'ones'),
         ('experiments_data/patterns/file2_pattern123.bin', 'pattern123'),
         ('experiments_data/patterns/file3_growing_pattern.bin', 'growing_pattern'),
         ('experiments_data/patterns/file4_fibonacci.bin', 'fibonacci'),
-        ('experiments_data/patterns/file5_random.bin', 'random')
+        ('experiments_data/patterns/file5_random.bin', 'random'),
+        ('experiments_data/enwiks/enwik5', 'enwik'),
     ]
     
     for input_path, name in experiment_datas:
         experiment_name = f"experiment_{name}_{time.strftime('%Y%m%d_%H%M%S')}"
-        experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 0, False)
+        experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
         experiment.run()
         experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
+    
+    
+    # input_path = 'experiments_data/enwiks/enwik5'
+    
     
     #test experiment:
     # experiment_name = f"experiment_test_{time.strftime('%Y%m%d_%H%M%S')}"

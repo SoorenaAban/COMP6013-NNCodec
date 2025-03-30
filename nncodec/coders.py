@@ -313,7 +313,9 @@ class ArithmeticCodec:
         underflow = 0
         context: List[Symbol] = []
 
+        sym_num = 0 # for logging
         for symbol in symbols:
+            sym_num += 1 # for logging
             bits_before = out_buffer.tell() * 8 + bit_out.num_bits_filled  # for logging
             
             probs = prediction_model.predict(context)
@@ -354,6 +356,7 @@ class ArithmeticCodec:
                 high = ((high << 1) & (full_range - 1)) | 1
 
             if train_callback is not None:
+                Logger.log(PredictionModelTrainingProgressStep(len(context), len(symbols)))
                 train_callback(context, symbol)
             context.append(symbol)
             
@@ -362,7 +365,7 @@ class ArithmeticCodec:
             symbol_size = len(symbol.data) * 8  # for logging
             if self.logger is not None:
                 self.logger.log(CodingLog(symbol_size, encoded_bits))
-                self.logger.log(CodingProgressStep(bits_after, len(symbols)))
+                self.logger.log(CodingProgressStep(sym_num, len(symbols)))
 
         underflow += 1
         if low < quarter_range:
