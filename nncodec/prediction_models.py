@@ -4,11 +4,11 @@ import random
 import tensorflow as tf
 import numpy as np
 from keras import mixed_precision
-from keras import utils
 
 from .models import Symbol, SymbolFrequency, Dictionary
 from .settings import TF_SEED
-from .logger import *
+from .logger import Logger, PredictionModelTrainingProgressStep, PredictionModelTrainingLog
+from .keras_models import TFKerasModelBase
 
 class BasePredictionModel(abc.ABC):
     def __init__(self, dictionary):
