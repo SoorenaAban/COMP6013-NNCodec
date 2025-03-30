@@ -126,7 +126,7 @@ if __name__ == '__main__':
     ]
     
     for input_path, name in experiment_datas:
-        experiment_name = f"experiment_{name}_{time.strftime('%Y%m%d_%H%M%S')}"
+        experiment_name = f"experiment_5_{name}_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
         experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
         experiment.run()
         experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
