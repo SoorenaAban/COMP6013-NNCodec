@@ -1,3 +1,11 @@
+"""
+models.py
+
+The shared objects used in the nncodec.
+
+"""
+
+
 from typing import Optional, Iterable, List, Dict
 
 class Symbol:

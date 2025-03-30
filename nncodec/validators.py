@@ -1,3 +1,10 @@
+"""
+validators.py
+
+Shared codes for input validation in nncodec.
+"""
+
+
 import os
 from typing import Any
 

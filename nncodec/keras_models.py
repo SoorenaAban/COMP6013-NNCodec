@@ -1,3 +1,10 @@
+"""
+keras_models.py
+
+keras sub-classes for the nncodec, containing predifined configurations for Tensorflow prediction model.
+
+"""
+
 import tensorflow as tf
 from typing import Any, List, Union
 

@@ -1,3 +1,11 @@
+"""
+preprocessors.py
+
+Preprocessors for the nncodec. These preprocessors convert raw data into a list of symbols and vice versa.
+
+"""
+
+
 import abc
 from typing import List, Tuple, Optional
 

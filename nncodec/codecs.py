@@ -1,3 +1,11 @@
+"""
+codecs.py
+
+Intended entry points and primay interface for the nncodec.
+
+"""
+
+
 import os
 import random
 import struct
@@ -39,6 +47,7 @@ class CompressedModel:
         if original_file_name is not None:
             validate_type(original_file_name, "Original file name", str)
 
+        # Validate preprocessor code and version
         preprocessor = get_preprocessor(preprocessor_code)
 
         if version != 1:
@@ -48,6 +57,10 @@ class CompressedModel:
         if len(preprocessor_header) > preprocessor_header_size:
             raise ValueError("Length of preprocessor header must be less than or equal to preprocessor header size")
 
+        # Validate keras code and coder code
+        keras_model = get_keras_model(keras_code, preprocessor_header_size)
+        
+        # Validate coder code
         coder = get_coder(coder_code)
 
         self.original_file_name = original_file_name

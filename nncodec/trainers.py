@@ -1,3 +1,11 @@
+"""
+trainers.py
+
+Trainers for the nncodec. Intended for generation of pre-trained models. Currently not working as intended.
+
+"""
+
+
 import abc
 from typing import List, Optional, Any
 
