@@ -126,15 +126,15 @@ if __name__ == '__main__':
     ]
     
     for input_path, name in experiment_datas:
-        experiment_name = f"experiment_4_{name}_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
-        experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
+        experiment_name = f"experiment_4_{name}_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
+        experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 2, False)
         experiment.run()
         experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
         
-        experiment_name = f"experiment_4_{name}_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
-        experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
-        experiment.run()
-        experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
+        # experiment_name = f"experiment_4_{name}_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
+        # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
+        # experiment.run()
+        # experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     
     
     # input_path = 'experiments_data/enwiks/enwik5'

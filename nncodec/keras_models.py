@@ -180,7 +180,9 @@ class GruKerasModel(TFKerasModelBase):
                 return_state=True,
                 kernel_initializer=tf.keras.initializers.GlorotUniform(seed=self.seed + i),
                 recurrent_initializer=tf.keras.initializers.GlorotUniform(seed=self.seed + self.num_layers + i),
-                name=f"gru_{i}"
+                name=f"gru_{i}",
+                dtype='float32'  
+
             )
             self.gru_layers.append(gru_layer)
 
@@ -258,6 +260,37 @@ class GruKerasModel(TFKerasModelBase):
             return [predictions] + new_states
         else:
             return predictions
+    def build(self, input_shape):
+    # Assume input_shape is a list/tuple, and the first element represents the main input shape.
+        if isinstance(input_shape, (list, tuple)):
+            main_input_shape = input_shape[0]
+        else:
+            main_input_shape = input_shape
+
+        # Build embedding layer.
+        self.embedding.build(main_input_shape)
+        embedded_shape = self.embedding.compute_output_shape(main_input_shape)
+
+        # Build first GRU layer.
+        self.gru_layers[0].build(embedded_shape)
+        x_shape = self.gru_layers[0].compute_output_shape(embedded_shape)
+
+        # For subsequent GRU layers, the input is a concatenation of the embedding and the previous GRU output.
+        for i in range(1, self.num_layers):
+            # For simplicity, assume the concatenated shape is:
+            # (batch_size, seq_length, embedding_dim + rnn_units)
+            concat_shape = (main_input_shape[0], main_input_shape[1], embedded_shape[-1] + self.rnn_units)
+            self.gru_layers[i].build(concat_shape)
+            x_shape = self.gru_layers[i].compute_output_shape(concat_shape)
+
+        # After processing, the outputs from each layer are reduced to (batch_size, rnn_units).
+        # Concatenated final outputs yield (batch_size, num_layers * rnn_units)
+        dense_input_shape = (main_input_shape[0], self.num_layers * self.rnn_units)
+        self.dense.build(dense_input_shape)
+        self.softmax.build(self.dense.compute_output_shape(dense_input_shape))
+
+        # Mark the model as built.
+        super(GruKerasModel, self).build(input_shape)
 
 
 class LstmKerasModelLight(TFKerasModelBase):
