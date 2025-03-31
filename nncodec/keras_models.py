@@ -12,7 +12,7 @@ from .settings import SEED
 
 
 class TFKerasModelBase(tf.keras.Model):
-    """     Base class for predefined Keras models in our prediction framework. """
+    """Base class for predefined Keras models in our prediction framework."""
     def __init__(self, **kwargs: Any) -> None:
         super(TFKerasModelBase, self).__init__(**kwargs)
         self.seed: int = SEED
@@ -201,20 +201,21 @@ class GruKerasModel(TFKerasModelBase):
             return inputs[:, -1, :]
 
     @tf.function
-    def call(self, inputs: Union[List[tf.Tensor], tuple], training: bool = False) -> tf.Tensor:
+    def call(self, inputs: Union[List[tf.Tensor], tuple], training: bool = False, return_states: bool = False) -> Union[tf.Tensor, List[tf.Tensor]]:
         """
         Process input tensors through the GRU model.
-        
+
         Expected inputs: a list of 1 + 2 * num_layers tensors.
           - inputs[0]: the main input (token sequences)
-          - For each GRU layer, a single initial state is used.
+          - For each GRU layer, a single initial state is used (the second state is ignored).
         
         Args:
             inputs (list or tuple of tf.Tensor): Input tensors.
             training (bool): Whether in training mode.
+            return_states (bool): If True, also return the updated GRU states in a duplicated format.
         
         Returns:
-            tf.Tensor: The predictions tensor.
+            tf.Tensor or list of tf.Tensor: The predictions tensor, optionally with updated states.
         
         Raises:
             ValueError: If the number of inputs does not match the expected count.
@@ -226,19 +227,24 @@ class GruKerasModel(TFKerasModelBase):
         main_input = inputs[0]
         embedded = self.embedding(main_input)
         skip_connections: List[tf.Tensor] = []
+        new_states: List[tf.Tensor] = []
 
-        init_state_0 = inputs[1]  
-        x, _ = self.gru_layers[0](embedded, initial_state=[init_state_0], training=training)
+        # Process first GRU layer.
+        init_state_0 = inputs[1]
+        x, state = self.gru_layers[0](embedded, initial_state=[init_state_0], training=training)
         skip_connections.append(x)
+        new_states.extend([state, state])  # Duplicate state for compatibility
 
+        # Process subsequent GRU layers with skip connections.
         for i in range(1, self.num_layers):
             concatenated = tf.keras.layers.concatenate(
                 [embedded, skip_connections[i-1]],
                 name=f"concat_{i}"
             )
-            init_state = inputs[1 + 2 * i]  
-            x, _ = self.gru_layers[i](concatenated, initial_state=[init_state], training=training)
+            init_state = inputs[1 + 2 * i]
+            x, state = self.gru_layers[i](concatenated, initial_state=[init_state], training=training)
             skip_connections.append(x)
+            new_states.extend([state, state])  # Duplicate state for compatibility
 
         final_outputs = [self.last_time_steps[i](skip_connections[i]) for i in range(self.num_layers)]
         if self.num_layers == 1:
@@ -246,7 +252,12 @@ class GruKerasModel(TFKerasModelBase):
         else:
             layer_input_final = tf.keras.layers.concatenate(final_outputs, name="final_concat")
         logits = self.dense(layer_input_final)
-        return self.softmax(logits)
+        predictions = self.softmax(logits)
+
+        if return_states:
+            return [predictions] + new_states
+        else:
+            return predictions
 
 
 class LstmKerasModelLight(TFKerasModelBase):
