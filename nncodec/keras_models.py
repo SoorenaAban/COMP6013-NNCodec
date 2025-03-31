@@ -233,7 +233,7 @@ class GruKerasModel(TFKerasModelBase):
 
         # Process first GRU layer.
         init_state_0 = inputs[1]
-        x, state = self.gru_layers[0](embedded, initial_state=[init_state_0], training=training)
+        x, state = self.gru_layers[0](embedded, initial_state=(init_state_0,), training=training)
         skip_connections.append(x)
         new_states.extend([state, state])  # Duplicate state for compatibility
 
@@ -261,35 +261,26 @@ class GruKerasModel(TFKerasModelBase):
         else:
             return predictions
     def build(self, input_shape):
-    # Assume input_shape is a list/tuple, and the first element represents the main input shape.
         if isinstance(input_shape, (list, tuple)):
             main_input_shape = input_shape[0]
         else:
             main_input_shape = input_shape
 
-        # Build embedding layer.
         self.embedding.build(main_input_shape)
         embedded_shape = self.embedding.compute_output_shape(main_input_shape)
 
-        # Build first GRU layer.
         self.gru_layers[0].build(embedded_shape)
         x_shape = self.gru_layers[0].compute_output_shape(embedded_shape)
 
-        # For subsequent GRU layers, the input is a concatenation of the embedding and the previous GRU output.
         for i in range(1, self.num_layers):
-            # For simplicity, assume the concatenated shape is:
-            # (batch_size, seq_length, embedding_dim + rnn_units)
             concat_shape = (main_input_shape[0], main_input_shape[1], embedded_shape[-1] + self.rnn_units)
             self.gru_layers[i].build(concat_shape)
             x_shape = self.gru_layers[i].compute_output_shape(concat_shape)
 
-        # After processing, the outputs from each layer are reduced to (batch_size, rnn_units).
-        # Concatenated final outputs yield (batch_size, num_layers * rnn_units)
         dense_input_shape = (main_input_shape[0], self.num_layers * self.rnn_units)
         self.dense.build(dense_input_shape)
         self.softmax.build(self.dense.compute_output_shape(dense_input_shape))
 
-        # Mark the model as built.
         super(GruKerasModel, self).build(input_shape)
 
 
