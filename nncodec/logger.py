@@ -70,6 +70,11 @@ class CodingProgressStep(Log):
         self.total_steps = total_steps
         super().__init__("Coding_progress_step", LogLevel.PROGRESS, message)
 
+class EncodedDataSizeLog(Log):
+    def __init__(self, size: int) -> None:
+        self.size = size
+        super().__init__("Encoded_data_size_log", LogLevel.INFO, f"Encoded data size: {size}")
+
 
 class PredictionModelTrainingProgressStep(Log):
     def __init__(self, message: str, total_steps: Optional[int] = None) -> None:

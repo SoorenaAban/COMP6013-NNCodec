@@ -116,70 +116,28 @@ class TfByteArithmeticExperiment:
 if __name__ == '__main__':
     experiments_output_path = 'experiments_out'
     
-    experiment_datas = [
-        ('experiments_data/patterns/file1_ones.bin', 'ones'),
-        ('experiments_data/patterns/file2_pattern123.bin', 'pattern123'),
-        ('experiments_data/patterns/file3_growing_pattern.bin', 'growing_pattern'),
-        ('experiments_data/patterns/file4_fibonacci.bin', 'fibonacci'),
-        ('experiments_data/patterns/file5_random.bin', 'random'),
-        ('experiments_data/enwiks/enwik4', 'enwik'),
-    ]
+    # experiment_datas = [
+    #     ('experiments_data/patterns/file1_ones.bin', 'ones'),
+    #     ('experiments_data/patterns/file2_pattern123.bin', 'pattern123'),
+    #     ('experiments_data/patterns/file3_growing_pattern.bin', 'growing_pattern'),
+    #     ('experiments_data/patterns/file4_fibonacci.bin', 'fibonacci'),
+    #     ('experiments_data/patterns/file5_random.bin', 'random'),
+    # ]
     
-    for input_path, name in experiment_datas:
-        experiment_name = f"experiment_4_{name}_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
-        experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 2, False)
-        experiment.run()
-        experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
-        
-        # experiment_name = f"experiment_4_{name}_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
-        # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
-        # experiment.run()
-        # experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
+    # for input_path, name in experiment_datas:
+    #     experiment_name = f"experiment_4_{name}_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
+    #     experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
+    #     experiment.run()
+    #     experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     
+    experiment_data = 'experiments_data/enwiks/enwik5'
+    experiment_name = f"experiment_4_enwik5_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
+    experiment = TfByteArithmeticExperiment(experiment_name, experiment_data, experiments_output_path, 2, False)
+    experiment.run()
+    experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     
-    # input_path = 'experiments_data/enwiks/enwik5'
-    
-    
-    #test experiment:
-    # experiment_name = f"experiment_test_{time.strftime('%Y%m%d_%H%M%S')}"
-    # input_path = 'experiments_data/enwiks_trianing_folder/enwik4'
-    # experiment_training_folder = os.path.join("experiments_data", "enwiks_trianing_folder")
-    # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 0, False, experiment_training_folder)
+    # experiment_name = f"experiment_4_enwik5_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
+    # experiment = TfByteArithmeticExperiment(experiment_name, experiment_data, experiments_output_path, 1, True)
     # experiment.run()
-    # experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
-    # experiment.display_graphs()
-
-    # #lstm_experiment (online learning)
-    # experiment_name = f"experiment_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
-    # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
-    # experiment.run()
-    # experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
-    
-    # #lstm_experiment (deep learning)
-    # experiment_name = f"experiment_lstm_deep_{time.strftime('%Y%m%d_%H%M%S')}"
-    # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, True)
-    # experiment.run()
-    # experiment.save_report_in_text(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
-    
-    # #gru_experiment (online learning)
-    # experiment_name = f"experiment_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
-    # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 2, False)
-    # experiment.run()
-    # experiment.save_report_in_text(os.path.join(experiments_output_path, f"{experiment_name}.txt"))
-    
-    # #training experiments:
-    # input_path = 'experiments_data/wikipedia_large_pages_txt/List of subnational entities by Human Development Index - Wikipedia.txt'
-    # # lstm_experiment (online learning)
-    # experiment_name = f"experiment_lstm_online_no_training_{time.strftime('%Y%m%d_%H%M%S')}"
-    # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
-    # experiment.run()
-    # experiment.save_report_in_text(os.path.join(experiments_output_path, f"{experiment_name}.txt"))
-    
-    # lstm_experiment (pre learning)
-    # experiment_name = f"experiment_lstm_prelearning_{time.strftime('%Y%m%d_%H%M%S')}"
-    # experiment_training_folder = os.path.join("experiments_data", "wikipedia_large_pages_txt")
-    # experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False, experiment_training_folder)
-    # experiment.run()
-    # experiment.save_report_in_text(os.path.join(experiments_output_path, f"{experiment_name}.txt"))
-    
+    # experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     

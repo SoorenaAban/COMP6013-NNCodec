@@ -202,52 +202,57 @@ class GruKerasModel(TFKerasModelBase):
         def call(self, inputs: tf.Tensor) -> tf.Tensor:
             return inputs[:, -1, :]
 
-    @tf.function
-    def call(self, inputs: Union[List[tf.Tensor], tuple], training: bool = False, return_states: bool = False) -> Union[tf.Tensor, List[tf.Tensor]]:
+    def call(self, inputs: Union[List[tf.Tensor], tuple],
+             training: bool = False,
+             return_states: bool = False) -> Union[tf.Tensor, List[tf.Tensor]]:
         """
         Process input tensors through the GRU model.
-
-        Expected inputs: a list of 1 + 2 * num_layers tensors.
-          - inputs[0]: the main input (token sequences)
-          - For each GRU layer, a single initial state is used (the second state is ignored).
         
-        Args:
-            inputs (list or tuple of tf.Tensor): Input tensors.
-            training (bool): Whether in training mode.
-            return_states (bool): If True, also return the updated GRU states in a duplicated format.
-        
-        Returns:
-            tf.Tensor or list of tf.Tensor: The predictions tensor, optionally with updated states.
-        
-        Raises:
-            ValueError: If the number of inputs does not match the expected count.
+        Expects inputs in one of two forms:
+          - Either 1 + 2*num_layers tensors (for external compatibility),
+          - Or 1 + num_layers tensors (if using our GRU-specific dummy states).
         """
-        expected_inputs = 1 + 2 * self.num_layers
-        if not isinstance(inputs, (list, tuple)) or len(inputs) != expected_inputs:
-            raise ValueError(f"Expected {expected_inputs} inputs, got {len(inputs)}")
-
-        main_input = inputs[0]
+        # Determine expected input length:
+        expected_double = 1 + 2 * self.num_layers
+        expected_single = 1 + self.num_layers
+        
+        if not isinstance(inputs, (list, tuple)):
+            raise ValueError("inputs must be a list or tuple")
+        
+        if len(inputs) == expected_double:
+            main_input = inputs[0]
+            gru_initial_states = []
+            for i in range(self.num_layers):
+                gru_initial_states.append(inputs[1 + 2 * i])
+        elif len(inputs) == expected_single:
+            main_input = inputs[0]
+            gru_initial_states = list(inputs[1:])
+        else:
+            raise ValueError(f"Expected either {expected_double} or {expected_single} inputs, got {len(inputs)}")
+        
         embedded = self.embedding(main_input)
         skip_connections: List[tf.Tensor] = []
         new_states: List[tf.Tensor] = []
-
-        # Process first GRU layer.
-        init_state_0 = inputs[1]
-        x, state = self.gru_layers[0](embedded, initial_state=(init_state_0,), training=training)
+        
+        init_state_0 = gru_initial_states[0]
+        result = self.gru_layers[0](embedded, initial_state=(init_state_0,), training=training)
+        x = result[0]
+        state = result[1]
         skip_connections.append(x)
-        new_states.extend([state, state])  # Duplicate state for compatibility
-
-        # Process subsequent GRU layers with skip connections.
+        new_states.extend([state, state])
+        
         for i in range(1, self.num_layers):
             concatenated = tf.keras.layers.concatenate(
                 [embedded, skip_connections[i-1]],
                 name=f"concat_{i}"
             )
-            init_state = inputs[1 + 2 * i]
-            x, state = self.gru_layers[i](concatenated, initial_state=[init_state], training=training)
+            init_state = gru_initial_states[i]
+            result = self.gru_layers[i](concatenated, initial_state=(init_state,), training=training)
+            x = result[0]
+            state = result[1]
             skip_connections.append(x)
-            new_states.extend([state, state])  # Duplicate state for compatibility
-
+            new_states.extend([state, state])
+        
         final_outputs = [self.last_time_steps[i](skip_connections[i]) for i in range(self.num_layers)]
         if self.num_layers == 1:
             layer_input_final = final_outputs[0]
@@ -255,11 +260,23 @@ class GruKerasModel(TFKerasModelBase):
             layer_input_final = tf.keras.layers.concatenate(final_outputs, name="final_concat")
         logits = self.dense(layer_input_final)
         predictions = self.softmax(logits)
-
+        
         if return_states:
             return [predictions] + new_states
         else:
             return predictions
+        
+    def get_dummy_states(self) -> List[tf.Tensor]:
+        """
+        For GRU, return only one dummy state per layer.
+        """
+        dummy_states: List[tf.Tensor] = []
+        if hasattr(self, 'num_layers') and hasattr(self, 'batch_size') and hasattr(self, 'rnn_units'):
+            for _ in range(self.num_layers):
+                state = tf.zeros((self.batch_size, self.rnn_units), dtype=tf.float32)
+                dummy_states.append(state)
+        return dummy_states    
+    
     def build(self, input_shape):
         if isinstance(input_shape, (list, tuple)):
             main_input_shape = input_shape[0]

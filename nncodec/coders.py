@@ -14,7 +14,7 @@ import struct
 from io import BytesIO
 from typing import Any, List, Optional, Callable, IO
 
-from .logger import Logger, EncodedSymbolProbability, CodingLog, CodingProgressStep, PredictionModelTrainingProgressStep
+from .logger import Logger, EncodedSymbolProbability, CodingLog, CodingProgressStep, PredictionModelTrainingProgressStep, EncodedDataSizeLog
 from .models import Symbol, Dictionary
 from .prediction_models import BasePredictionModel
 from .validators import validate_type  
@@ -379,6 +379,8 @@ class ArithmeticCodec:
                 bit_out.write(0)
         
         bit_out.finish()
+        if self.logger is not None:
+            self.logger.log(EncodedDataSizeLog(len(out_buffer.getvalue())))
         return out_buffer.getvalue()
 
     def integer_arithmetic_decode(
