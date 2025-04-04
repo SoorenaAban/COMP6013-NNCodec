@@ -193,7 +193,7 @@ class TfPredictionModel(BasePredictionModel):
                 print(e)
         print("GPUs Available:", tf.config.list_physical_devices('GPU'))
         
-        if keras_model.keras_code == 0:
+        if keras_model.keras_code == 2:
             tf.config.run_functions_eagerly(True)
         
         self.enable_determinism(SEED)

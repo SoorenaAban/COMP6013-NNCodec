@@ -1,4 +1,3 @@
-#experiment.py
 import time
 import os
 
@@ -107,8 +106,8 @@ class TfByteArithmeticExperiment:
             raise RuntimeError("The experiment has not been run yet.")
         
         display = PerformanceDisplay(self.compression_logger.logs)
-        display.generate_prediction_model_training_log_plot(os.path.join(self.experiment_folder_path, f"{self.name}_prediction_model_training_log.png"))
-        display.generate_encoded_symbol_probability_plot(os.path.join(self.experiment_folder_path, f"{self.name}_encoded_symbol_probability.png"))
+        display.generate_prediction_model_training_log_plot(False, os.path.join(self.experiment_folder_path, f"{self.name}_prediction_model_training_log.png"))
+        display.generate_encoded_symbol_probability_plot(False, os.path.join(self.experiment_folder_path, f"{self.name}_encoded_symbol_probability.png"))
                
         
 
@@ -116,28 +115,34 @@ class TfByteArithmeticExperiment:
 if __name__ == '__main__':
     experiments_output_path = 'experiments_out'
     
-    # experiment_datas = [
-    #     ('experiments_data/patterns/file1_ones.bin', 'ones'),
-    #     ('experiments_data/patterns/file2_pattern123.bin', 'pattern123'),
-    #     ('experiments_data/patterns/file3_growing_pattern.bin', 'growing_pattern'),
-    #     ('experiments_data/patterns/file4_fibonacci.bin', 'fibonacci'),
-    #     ('experiments_data/patterns/file5_random.bin', 'random'),
-    # ]
+    experiment_datas = [
+        ('experiments_data/patterns/file1_ones.bin', 'ones'),
+        ('experiments_data/patterns/file2_pattern123.bin', 'pattern123'),
+        ('experiments_data/patterns/file3_growing_pattern.bin', 'growing_pattern'),
+        ('experiments_data/patterns/file4_fibonacci.bin', 'fibonacci'),
+        ('experiments_data/patterns/file5_random.bin', 'random'),
+    ]
     
-    # for input_path, name in experiment_datas:
-    #     experiment_name = f"experiment_4_{name}_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
-    #     experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
-    #     experiment.run()
-    #     experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
+    for input_path, name in experiment_datas:
+        experiment_name = f"experiment_4_{name}_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
+        experiment = TfByteArithmeticExperiment(experiment_name, input_path, experiments_output_path, 1, False)
+        experiment.run()
+        experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     
-    experiment_data = 'experiments_data/enwiks/enwik5'
-    experiment_name = f"experiment_4_enwik5_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
+    experiment_data = 'experiments_data/enwiks/enwik4'
+    experiment_name = f"experiment_4_enwik4_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
+    experiment = TfByteArithmeticExperiment(experiment_name, experiment_data, experiments_output_path, 1, False)
+    experiment.run()
+    experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
+    
+    
+    experiment_name = f"experiment_4_enwik4_gru_online_{time.strftime('%Y%m%d_%H%M%S')}"
     experiment = TfByteArithmeticExperiment(experiment_name, experiment_data, experiments_output_path, 2, False)
     experiment.run()
     experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     
-    # experiment_name = f"experiment_4_enwik5_lstm_online_{time.strftime('%Y%m%d_%H%M%S')}"
-    # experiment = TfByteArithmeticExperiment(experiment_name, experiment_data, experiments_output_path, 1, True)
-    # experiment.run()
-    # experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
+    experiment_name = f"experiment_4_enwik4_lstm_offline_{time.strftime('%Y%m%d_%H%M%S')}"
+    experiment = TfByteArithmeticExperiment(experiment_name, experiment_data, experiments_output_path, 1, True)
+    experiment.run()
+    experiment.save_results(os.path.join(experiments_output_path, experiment_name, f"{experiment_name}.txt"))
     
